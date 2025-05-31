@@ -1,0 +1,107 @@
+/* Custom styles for the Mentorship Platform */
+/* Using minimal custom CSS, relying primarily on Bootstrap classes */
+
+:root {
+    /* Use Bootstrap's CSS custom properties for consistency */
+    --bs-border-radius-lg: 0.75rem;
+}
+
+/* Ensure proper spacing and layout */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Custom card hover effects */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Profile avatar styling */
+.profile-avatar {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+}
+
+/* Status card animations */
+.card[class*="bg-"] .card-body {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card[class*="bg-"]:hover .card-body {
+    transform: scale(1.02);
+}
+
+/* Custom alert styling */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: var(--bs-success);
+}
+
+.alert-danger {
+    border-left-color: var(--bs-danger);
+}
+
+.alert-warning {
+    border-left-color: var(--bs-warning);
+}
+
+.alert-info {
+    border-left-color: var(--bs-info);
+}
+
+/* Form validation styling enhancement */
+.form-control.is-invalid {
+    background-image: none;
+}
+
+/* Navigation enhancement */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Loading states for future use */
+.btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Utility classes */
+.text-gradient {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Icon alignment */
+[data-feather] {
+    vertical-align: middle;
+}
