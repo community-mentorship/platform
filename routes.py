@@ -499,10 +499,10 @@ def admin_delete_form(form_id):
     return redirect(url_for('admin_forms'))
 
 
-@app.route('/apply/<slug>')
+@app.route('/form/<slug>')
 @login_required
-def apply_form(slug):
-    """Show application form to users"""
+def form_view(slug):
+    """Show form to users"""
     form_obj = Form.query.filter_by(slug=slug, is_active=True).first_or_404()
     user = User.query.get(session['user_id'])
     
