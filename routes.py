@@ -49,11 +49,13 @@ def login():
     form = LoginForm()
     
     if form.validate_on_submit():
+        print("Form validation passed")
         try:
             username = (form.username.data or '').strip().lower()
             email = (form.email.data or '').strip().lower()
             first_name = (form.first_name.data or '').strip()
             last_name = (form.last_name.data or '').strip()
+            print(f"Form data processed: {username}, {email}, {first_name}, {last_name}")
             
             # Check if user exists by username or email
             user = User.query.filter(
