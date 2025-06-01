@@ -22,7 +22,7 @@
                             <th>Slug</th>
                             <th>Access</th>
                             <th>Status</th>
-                            <th>Applications</th>
+                            <th>Submissions</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -49,7 +49,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-primary">{{ form.applications.count() }}</span>
+                                <span class="badge bg-primary">{{ form.submissions.count() }}</span>
                             </td>
                             <td>
                                 <small class="text-muted">
@@ -68,7 +68,7 @@
                                        class="btn btn-outline-secondary">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    {% if form.applications.count() == 0 %}
+                                    {% if form.submissions.count() == 0 %}
                                     <form method="POST" action="{{ url_for('admin_delete_form', form_id=form.id) }}" 
                                           style="display: inline;">
                                         <button type="submit" class="btn btn-outline-danger"
