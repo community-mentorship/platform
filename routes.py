@@ -63,15 +63,14 @@ def login():
             # Create new user (fake registration)
             # Make first user admin for demo purposes
             is_first_user = User.query.count() == 0
-            user = User(
-                username=username,
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                is_admin=is_first_user,
-                role='user',
-                created_at=datetime.utcnow()
-            )
+            user = User()
+            user.username = username
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.is_admin = is_first_user
+            user.role = UserRole.MENTEE
+            user.created_at = datetime.utcnow()
             db.session.add(user)
             flash(f'Welcome to the mentorship platform, {first_name}! Your account has been created.', 'success')
         else:

@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, SubmitField, TextAreaField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, Regexp
-from models import ViewerScope
+from models import ViewerScope, UserRole
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[
@@ -44,15 +44,44 @@ class PageForm(FlaskForm):
     
     viewer_scope = SelectField('Who can view this page?', 
         choices=[
-            (ViewerScope.ALL.value, 'All logged-in users'),
-            (ViewerScope.MENTOR.value, 'Mentors only'),
-            (ViewerScope.MENTEE.value, 'Mentees only'),
-            (ViewerScope.ADMIN.value, 'Admins only')
+            (ViewerScope.ALL_USERS.value, 'All logged-in users'),
+            (ViewerScope.MENTORS_ONLY.value, 'Mentors only'),
+            (ViewerScope.MENTEES_ONLY.value, 'Mentees only'),
+            (ViewerScope.ADMINS_ONLY.value, 'Admins only')
         ],
-        default=ViewerScope.ALL.value,
+        default=ViewerScope.ALL_USERS.value,
         validators=[DataRequired()]
     )
     
     is_published = BooleanField('Published', default=True)
     
     submit = SubmitField('Save Page')
+
+class UserEditForm(FlaskForm):
+    first_name = StringField('First Name', validators=[
+        DataRequired(message='First name is required'),
+        Length(max=50, message='First name must not exceed 50 characters')
+    ])
+    
+    last_name = StringField('Last Name', validators=[
+        DataRequired(message='Last name is required'),
+        Length(max=50, message='Last name must not exceed 50 characters')
+    ])
+    
+    email = EmailField('Email', validators=[
+        DataRequired(message='Email is required'),
+        Email(message='Please enter a valid email address')
+    ])
+    
+    role = SelectField('Role', 
+        choices=[
+            (UserRole.MENTEE.value, 'Mentee'),
+            (UserRole.MENTOR.value, 'Mentor'),
+            (UserRole.BOTH.value, 'Both Mentor & Mentee')
+        ],
+        validators=[DataRequired()]
+    )
+    
+    is_admin = BooleanField('Admin Access')
+    
+    submit = SubmitField('Update User')
