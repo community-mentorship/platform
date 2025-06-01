@@ -193,13 +193,13 @@ function renderFields() {
                         <small class="text-muted">Field ${index + 1}</small>
                         <div class="btn-group btn-group-sm">
                             <button type="button" class="btn btn-outline-secondary" onclick="moveField(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>
-                                <i class="fas fa-chevron-up"></i>
+                                <i class="fas fa-chevron-up"></i> Up
                             </button>
                             <button type="button" class="btn btn-outline-secondary" onclick="moveField(${index}, 'down')" ${index === formFields.length - 1 ? 'disabled' : ''}>
-                                <i class="fas fa-chevron-down"></i>
+                                <i class="fas fa-chevron-down"></i> Down
                             </button>
                             <button type="button" class="btn btn-outline-danger" onclick="removeField(${index})">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-trash"></i> Remove
                             </button>
                         </div>
                     </div>

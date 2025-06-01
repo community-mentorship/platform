@@ -61,19 +61,19 @@
                                     {% if form.is_active %}
                                     <a href="{{ url_for('form_view', slug=form.slug) }}" 
                                        class="btn btn-outline-primary" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i>
+                                        <i class="fas fa-external-link-alt"></i> View
                                     </a>
                                     {% endif %}
                                     <a href="{{ url_for('admin_edit_form', form_id=form.id) }}" 
                                        class="btn btn-outline-secondary">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     {% if form.submissions.count() == 0 %}
                                     <form method="POST" action="{{ url_for('admin_delete_form', form_id=form.id) }}" 
                                           style="display: inline;">
-                                        <button type="submit" class="btn btn-outline-danger"
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
                                                 onclick="return confirm('Are you sure you want to delete this form?')">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                     {% endif %}
