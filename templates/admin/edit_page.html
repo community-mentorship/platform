@@ -254,7 +254,7 @@ function togglePreview() {
     const previewContainer = document.getElementById('previewContainer');
     const previewBtn = document.getElementById('previewBtn');
     
-    if (previewContainer.style.display === 'none') {
+    if (previewContainer.style.display === 'none' || previewContainer.style.display === '') {
         // Show preview
         editorContainer.style.display = 'none';
         previewContainer.style.display = 'block';

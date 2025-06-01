@@ -54,8 +54,10 @@ def login():
         first_name = form.first_name.data.strip()
         last_name = form.last_name.data.strip()
         
-        # Check if user exists
-        user = User.query.filter_by(username=username).first()
+        # Check if user exists by username or email
+        user = User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first()
         
         if not user:
             # Create new user (fake registration)
@@ -73,8 +75,14 @@ def login():
             db.session.add(user)
             flash(f'Welcome to the mentorship platform, {first_name}! Your account has been created.', 'success')
         else:
-            # Update existing user info
-            user.email = email
+            # Update existing user info (but keep username and email if they match existing)
+            if user.username != username and user.email == email:
+                # Same email, different username - update username
+                user.username = username
+            elif user.username == username and user.email != email:
+                # Same username, different email - update email
+                user.email = email
+            # Always update name fields
             user.first_name = first_name
             user.last_name = last_name
             flash(f'Welcome back, {first_name}!', 'success')
