@@ -31,7 +31,7 @@
                         <div class="mb-3">
                             {{ form.slug.label(class="form-label") }}
                             <div class="input-group">
-                                <span class="input-group-text">/apply/</span>
+                                <span class="input-group-text">/form/</span>
                                 {{ form.slug(class="form-control") }}
                             </div>
                             {% if form.slug.errors %}
@@ -136,7 +136,7 @@
                     </div>
                     {% if form_obj.is_active %}
                     <div class="mt-3">
-                        <a href="{{ url_for('apply_form', slug=form_obj.slug) }}" 
+                        <a href="{{ url_for('form_view', slug=form_obj.slug) }}" 
                            class="btn btn-outline-primary btn-sm w-100" target="_blank">
                             <i class="fas fa-external-link-alt"></i> Preview Form
                         </a>

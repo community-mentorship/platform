@@ -528,10 +528,10 @@ def form_view(slug):
     return render_template('apply.html', form=form_obj)
 
 
-@app.route('/apply/<slug>/submit', methods=['POST'])
+@app.route('/form/<slug>/submit', methods=['POST'])
 @login_required
-def submit_application(slug):
-    """Process application form submission"""
+def submit_form(slug):
+    """Process form submission"""
     form_obj = Form.query.filter_by(slug=slug, is_active=True).first_or_404()
     user = User.query.get(session['user_id'])
     
@@ -550,8 +550,8 @@ def submit_application(slug):
     ).first()
     
     if existing_application:
-        flash('You have already submitted this application.', 'warning')
-        return redirect(url_for('apply_form', slug=slug))
+        flash('You have already submitted this form.', 'warning')
+        return redirect(url_for('form_view', slug=slug))
     
     # Collect form responses
     responses = {}
