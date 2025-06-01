@@ -1,8 +1,35 @@
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import render_template, request, redirect, url_for, session, flash, abort
 from app import app, db
-from models import User
-from forms import LoginForm
+from models import User, Page, ViewerScope
+from forms import LoginForm, PageForm
 from datetime import datetime
+from functools import wraps
+
+def admin_required(f):
+    """Decorator to require admin access"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('login'))
+        
+        user = User.query.get(session['user_id'])
+        if not user or not user.is_admin:
+            flash('Admin access required.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+def login_required(f):
+    """Decorator to require login"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def index():
@@ -30,11 +57,15 @@ def login():
         
         if not user:
             # Create new user (fake registration)
+            # Make first user admin for demo purposes
+            is_first_user = User.query.count() == 0
             user = User(
                 username=username,
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
+                is_admin=is_first_user,
+                role='user',
                 created_at=datetime.utcnow()
             )
             db.session.add(user)
@@ -54,6 +85,8 @@ def login():
         session['user_id'] = user.id
         session['username'] = user.username
         session['first_name'] = user.first_name
+        session['is_admin'] = user.is_admin
+        session['role'] = user.role
         
         return redirect(url_for('dashboard'))
     
@@ -75,6 +108,120 @@ def dashboard():
     
     return render_template('dashboard.html', user=user)
 
+# Admin Routes
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    """Admin dashboard"""
+    user = User.query.get(session['user_id'])
+    total_users = User.query.count()
+    total_pages = Page.query.count()
+    published_pages = Page.query.filter_by(is_published=True).count()
+    recent_pages = Page.query.order_by(Page.updated_at.desc()).limit(5).all()
+    
+    return render_template('admin/dashboard.html', 
+                         user=user,
+                         total_users=total_users,
+                         total_pages=total_pages,
+                         published_pages=published_pages,
+                         recent_pages=recent_pages)
+
+@app.route('/admin/pages')
+@admin_required
+def admin_pages():
+    """List all pages for admin"""
+    pages = Page.query.order_by(Page.updated_at.desc()).all()
+    return render_template('admin/pages.html', pages=pages)
+
+@app.route('/admin/pages/new', methods=['GET', 'POST'])
+@admin_required
+def admin_new_page():
+    """Create new page"""
+    form = PageForm()
+    
+    if form.validate_on_submit():
+        # Check if slug already exists
+        existing_page = Page.query.filter_by(slug=form.slug.data).first()
+        if existing_page:
+            flash('A page with this URL slug already exists.', 'error')
+            return render_template('admin/edit_page.html', form=form, page=None)
+        
+        page = Page(
+            title=form.title.data,
+            slug=form.slug.data,
+            content=form.content.data,
+            viewer_scope=ViewerScope(form.viewer_scope.data),
+            is_published=form.is_published.data,
+            created_by_id=session['user_id']
+        )
+        
+        db.session.add(page)
+        db.session.commit()
+        
+        flash(f'Page "{page.title}" created successfully!', 'success')
+        return redirect(url_for('admin_pages'))
+    
+    return render_template('admin/edit_page.html', form=form, page=None)
+
+@app.route('/admin/pages/<int:page_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_page(page_id):
+    """Edit existing page"""
+    page = Page.query.get_or_404(page_id)
+    form = PageForm(obj=page)
+    
+    # Set the form's viewer_scope to the string value
+    form.viewer_scope.data = page.viewer_scope.value
+    
+    if form.validate_on_submit():
+        # Check if slug conflicts with other pages
+        existing_page = Page.query.filter(Page.slug == form.slug.data, Page.id != page_id).first()
+        if existing_page:
+            flash('A page with this URL slug already exists.', 'error')
+            return render_template('admin/edit_page.html', form=form, page=page)
+        
+        page.title = form.title.data
+        page.slug = form.slug.data
+        page.content = form.content.data
+        page.viewer_scope = ViewerScope(form.viewer_scope.data)
+        page.is_published = form.is_published.data
+        page.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        flash(f'Page "{page.title}" updated successfully!', 'success')
+        return redirect(url_for('admin_pages'))
+    
+    return render_template('admin/edit_page.html', form=form, page=page)
+
+@app.route('/admin/pages/<int:page_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_page(page_id):
+    """Delete page"""
+    page = Page.query.get_or_404(page_id)
+    title = page.title
+    
+    db.session.delete(page)
+    db.session.commit()
+    
+    flash(f'Page "{title}" deleted successfully!', 'success')
+    return redirect(url_for('admin_pages'))
+
+# Static Page Routes
+@app.route('/page/<slug>')
+@login_required
+def view_page(slug):
+    """View a static page"""
+    page = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
+    user = User.query.get(session['user_id'])
+    
+    # Check if user can view this page
+    if not user.can_view_page(page):
+        flash('You do not have permission to view this page.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('page.html', page=page)
+
 @app.route('/logout')
 def logout():
     """Logout and clear session"""
@@ -92,9 +239,19 @@ def inject_user():
             'logged_in': True,
             'user_id': session['user_id'],
             'username': session.get('username', ''),
-            'first_name': session.get('first_name', '')
+            'first_name': session.get('first_name', ''),
+            'is_admin': session.get('is_admin', False),
+            'role': session.get('role', 'user')
         }
     else:
         user_info = {'logged_in': False}
     
-    return dict(current_user=user_info)
+    # Get available pages for navigation
+    available_pages = []
+    if user_info.get('logged_in'):
+        user = User.query.get(user_info['user_id'])
+        if user:
+            all_pages = Page.query.filter_by(is_published=True).all()
+            available_pages = [page for page in all_pages if user.can_view_page(page)]
+    
+    return dict(current_user=user_info, available_pages=available_pages)
