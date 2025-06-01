@@ -56,6 +56,25 @@
                             </li>
                         {% endif %}
                         
+                        <!-- Mentor/Mentee Navigation -->
+                        {% if current_user.role in ['mentor', 'both'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('my_mentees') }}">
+                                    <i data-feather="user-plus" class="me-1"></i>
+                                    My Mentees
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if current_user.role in ['mentee', 'both'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('my_mentor') }}">
+                                    <i data-feather="user-check" class="me-1"></i>
+                                    My Mentor
+                                </a>
+                            </li>
+                        {% endif %}
+                        
                         {% if current_user.is_admin %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
@@ -70,6 +89,10 @@
                                     <li><a class="dropdown-item" href="{{ url_for('admin_pages') }}">
                                         <i data-feather="file-text" class="me-2"></i>
                                         Manage Pages
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i data-feather="users" class="me-2"></i>
+                                        Manage Users
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin_new_page') }}">
