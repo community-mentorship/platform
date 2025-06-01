@@ -169,7 +169,6 @@ function moveField(index, direction) {
 
 function updateField(index, property, value) {
     formFields[index][property] = value;
-    updatePreview();
     
     // Auto-generate field name from label
     if (property === 'label') {
@@ -179,6 +178,17 @@ function updateField(index, property, value) {
         formFields[index]['name'] = name;
         document.querySelector(`[data-field="${index}"] [name="field-name"]`).value = name;
     }
+    
+    // Add default options when changing to option-based field types
+    if (property === 'type') {
+        if ((value === 'select' || value === 'radio' || value === 'checkbox') && (!formFields[index].options || formFields[index].options.length === 0)) {
+            formFields[index].options = ['Option 1', 'Option 2', 'Option 3'];
+        }
+        // Re-render to show/hide options field
+        renderFields();
+    }
+    
+    updatePreview();
 }
 
 function renderFields() {
