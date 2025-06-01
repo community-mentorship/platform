@@ -95,7 +95,7 @@ def login():
         session['username'] = user.username
         session['first_name'] = user.first_name
         session['is_admin'] = user.is_admin
-        session['role'] = user.role
+        session['role'] = user.role.value
         
         return redirect(url_for('dashboard'))
     
