@@ -6,6 +6,7 @@ from datetime import datetime
 from functools import wraps
 import markdown
 import re
+import json
 
 def admin_required(f):
     """Decorator to require admin access"""
@@ -386,46 +387,44 @@ def admin_forms():
 @admin_required
 @login_required
 def admin_new_form():
-    """Create new application form"""
+    """Create new form"""
     form = FormBuilderForm()
     
     if form.validate_on_submit():
-        # Default form structure for mentorship application
-        default_fields = [
-            {
-                'type': 'text',
-                'label': 'Full Name',
-                'name': 'full_name',
-                'required': True,
-                'placeholder': 'Enter your full name'
-            },
-            {
-                'type': 'email',
-                'label': 'Email Address',
-                'name': 'email',
-                'required': True,
-                'placeholder': 'Enter your email address'
-            },
-            {
-                'type': 'select',
-                'label': 'I want to be a:',
-                'name': 'role_preference',
-                'required': True,
-                'options': ['Mentor', 'Mentee', 'Both']
-            },
-            {
-                'type': 'textarea',
-                'label': 'Tell us about yourself',
-                'name': 'bio',
-                'required': True,
-                'placeholder': 'Share your background and experience...'
-            }
-        ]
+        # Parse fields from JSON
+        try:
+            fields_data = form.fields_json.data
+            if fields_data:
+                import json
+                fields = json.loads(fields_data)
+            else:
+                # Default starter fields if none provided
+                fields = [
+                    {
+                        'id': 'field_1',
+                        'type': 'text',
+                        'label': 'Full Name',
+                        'name': 'full_name',
+                        'required': True,
+                        'placeholder': 'Enter your full name'
+                    },
+                    {
+                        'id': 'field_2',
+                        'type': 'email',
+                        'label': 'Email Address',
+                        'name': 'email',
+                        'required': True,
+                        'placeholder': 'Enter your email address'
+                    }
+                ]
+        except json.JSONDecodeError:
+            flash('Invalid form field configuration.', 'error')
+            return render_template('admin/form_builder.html', form=form, form_obj=None)
         
         new_form = Form(
             title=form.title.data,
             slug=form.slug.data,
-            fields=default_fields,
+            fields=fields,
             viewer_scope=ViewerScope(form.viewer_scope.data),
             is_active=form.is_active.data,
             created_by_id=session['user_id']
@@ -434,33 +433,46 @@ def admin_new_form():
         try:
             db.session.add(new_form)
             db.session.commit()
-            flash(f'Application form "{new_form.title}" created successfully!', 'success')
+            flash(f'Form "{new_form.title}" created successfully!', 'success')
             return redirect(url_for('admin_forms'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error creating form: {str(e)}', 'error')
     
-    return render_template('admin/edit_form.html', form=form, form_obj=None)
+    return render_template('admin/form_builder.html', form=form, form_obj=None)
 
 
 @app.route('/admin/forms/<int:form_id>/edit', methods=['GET', 'POST'])
 @admin_required
 @login_required
 def admin_edit_form(form_id):
-    """Edit existing application form"""
+    """Edit existing form"""
     form_obj = Form.query.get_or_404(form_id)
     form = FormBuilderForm()
     
     if form.validate_on_submit():
+        # Parse fields from JSON
+        try:
+            fields_data = form.fields_json.data
+            if fields_data:
+                import json
+                fields = json.loads(fields_data)
+            else:
+                fields = form_obj.fields  # Keep existing fields if no new data
+        except json.JSONDecodeError:
+            flash('Invalid form field configuration.', 'error')
+            return render_template('admin/form_builder.html', form=form, form_obj=form_obj)
+        
         form_obj.title = form.title.data
         form_obj.slug = form.slug.data
+        form_obj.fields = fields
         form_obj.viewer_scope = ViewerScope(form.viewer_scope.data)
         form_obj.is_active = form.is_active.data
         form_obj.updated_at = datetime.utcnow()
         
         try:
             db.session.commit()
-            flash(f'Application form "{form_obj.title}" updated successfully!', 'success')
+            flash(f'Form "{form_obj.title}" updated successfully!', 'success')
             return redirect(url_for('admin_forms'))
         except Exception as e:
             db.session.rollback()
@@ -473,7 +485,7 @@ def admin_edit_form(form_id):
         form.viewer_scope.data = form_obj.viewer_scope.value
         form.is_active.data = form_obj.is_active
     
-    return render_template('admin/edit_form.html', form=form, form_obj=form_obj)
+    return render_template('admin/form_builder.html', form=form, form_obj=form_obj)
 
 
 @app.route('/admin/forms/<int:form_id>/delete', methods=['POST'])
@@ -557,14 +569,51 @@ def submit_form(slug):
     responses = {}
     for field in form_obj.fields:
         field_name = field['name']
-        field_value = request.form.get(field_name, '').strip()
+        field_type = field.get('type', 'text')
         
-        # Basic validation
-        if field.get('required', False) and not field_value:
-            flash(f'{field["label"]} is required.', 'error')
-            return render_template('apply.html', form=form_obj)
-        
-        responses[field_name] = field_value
+        # Handle different field types
+        if field_type == 'checkbox':
+            # Get all selected values for checkbox groups
+            field_values = request.form.getlist(field_name)
+            max_selections = field.get('max_selections', 1)
+            
+            # Validate max selections
+            if len(field_values) > max_selections:
+                flash(f'{field["label"]}: Maximum {max_selections} selection(s) allowed.', 'error')
+                return render_template('apply.html', form=form_obj)
+            
+            # Check if required
+            if field.get('required', False) and not field_values:
+                flash(f'{field["label"]} is required.', 'error')
+                return render_template('apply.html', form=form_obj)
+            
+            responses[field_name] = field_values
+        else:
+            # Single value fields
+            field_value = request.form.get(field_name, '').strip()
+            
+            # Basic required validation
+            if field.get('required', False) and not field_value:
+                flash(f'{field["label"]} is required.', 'error')
+                return render_template('apply.html', form=form_obj)
+            
+            # Type-specific validation
+            if field_value:  # Only validate if value is provided
+                if field_type == 'email':
+                    import re
+                    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                    if not re.match(email_pattern, field_value):
+                        flash(f'{field["label"]}: Please enter a valid email address.', 'error')
+                        return render_template('apply.html', form=form_obj)
+                
+                elif field_type == 'url':
+                    import re
+                    url_pattern = r'^https?://.+\..+'
+                    if not re.match(url_pattern, field_value):
+                        flash(f'{field["label"]}: Please enter a valid URL (starting with http:// or https://).', 'error')
+                        return render_template('apply.html', form=form_obj)
+            
+            responses[field_name] = field_value
     
     # Create submission
     try:

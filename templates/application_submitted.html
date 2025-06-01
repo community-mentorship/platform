@@ -51,9 +51,22 @@
                 <div class="card-body">
                     {% for field in form.fields %}
                     <div class="mb-3">
-                        <strong>{{ field.label }}:</strong>
+                        <strong>{{ field.label | safe }}:</strong>
                         <div class="text-muted">
-                            {{ submission.responses.get(field.name, 'No response') }}
+                            {% set response = submission.responses.get(field.name, []) %}
+                            {% if field.type == 'checkbox' and response %}
+                                {% if response is iterable and response is not string %}
+                                    {{ response | join(', ') }}
+                                {% else %}
+                                    {{ response }}
+                                {% endif %}
+                            {% elif field.type == 'url' and response %}
+                                <a href="{{ response }}" target="_blank" rel="noopener">{{ response }}</a>
+                            {% elif response %}
+                                {{ response }}
+                            {% else %}
+                                <em>No response</em>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

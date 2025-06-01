@@ -15,7 +15,7 @@
                         {% for field in form.fields %}
                         <div class="mb-3">
                             <label class="form-label" for="{{ field.name }}">
-                                {{ field.label }}
+                                {{ field.label | safe }}
                                 {% if field.required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             
@@ -29,6 +29,14 @@
                             
                             {% elif field.type == 'email' %}
                                 <input type="email" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                            
+                            {% elif field.type == 'url' %}
+                                <input type="url" 
                                        class="form-control" 
                                        id="{{ field.name }}" 
                                        name="{{ field.name }}"
@@ -53,13 +61,47 @@
                                     <option value="{{ option }}">{{ option }}</option>
                                     {% endfor %}
                                 </select>
+                            
+                            {% elif field.type == 'radio' %}
+                                {% for option in field.options %}
+                                <div class="form-check">
+                                    <input type="radio" 
+                                           class="form-check-input" 
+                                           id="{{ field.name }}_{{ loop.index }}" 
+                                           name="{{ field.name }}"
+                                           value="{{ option }}"
+                                           {% if field.required %}required{% endif %}>
+                                    <label class="form-check-label" for="{{ field.name }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            
+                            {% elif field.type == 'checkbox' %}
+                                {% for option in field.options %}
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input checkbox-group" 
+                                           id="{{ field.name }}_{{ loop.index }}" 
+                                           name="{{ field.name }}"
+                                           value="{{ option }}"
+                                           data-group="{{ field.name }}"
+                                           data-max="{{ field.max_selections or 1 }}">
+                                    <label class="form-check-label" for="{{ field.name }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if field.max_selections and field.max_selections > 1 %}
+                                <small class="text-muted">Select up to {{ field.max_selections }} options</small>
+                                {% endif %}
                             {% endif %}
                         </div>
                         {% endfor %}
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                Submit Application
+                                Submit Form
                             </button>
                         </div>
                         
@@ -74,4 +116,44 @@
         </div>
     </div>
 </div>
+
+<script>
+// Checkbox group validation
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxGroups = {};
+    
+    // Group checkboxes by field name
+    document.querySelectorAll('.checkbox-group').forEach(function(checkbox) {
+        const group = checkbox.dataset.group;
+        const maxSelections = parseInt(checkbox.dataset.max);
+        
+        if (!checkboxGroups[group]) {
+            checkboxGroups[group] = {
+                checkboxes: [],
+                max: maxSelections
+            };
+        }
+        checkboxGroups[group].checkboxes.push(checkbox);
+        
+        // Add event listener for each checkbox
+        checkbox.addEventListener('change', function() {
+            const checkedBoxes = checkboxGroups[group].checkboxes.filter(cb => cb.checked);
+            
+            if (checkedBoxes.length >= maxSelections) {
+                // Disable unchecked boxes
+                checkboxGroups[group].checkboxes.forEach(cb => {
+                    if (!cb.checked) {
+                        cb.disabled = true;
+                    }
+                });
+            } else {
+                // Enable all boxes
+                checkboxGroups[group].checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
