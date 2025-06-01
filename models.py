@@ -31,7 +31,7 @@ class User(db.Model):
     # Relationships
     mentor_matches = db.relationship('Match', foreign_keys='Match.mentor_id', backref='mentor', lazy='dynamic')
     mentee_matches = db.relationship('Match', foreign_keys='Match.mentee_id', backref='mentee', lazy='dynamic')
-    change_logs = db.relationship('UserChangeLog', backref='user', lazy='dynamic')
+    change_logs = db.relationship('UserChangeLog', foreign_keys='UserChangeLog.user_id', backref='user', lazy='dynamic')
     
     def __repr__(self):
         return f'<User {self.username}>'

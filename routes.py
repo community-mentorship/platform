@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, session, flash, abort
 from app import app, db
-from models import User, Page, ViewerScope
-from forms import LoginForm, PageForm
+from models import User, Page, ViewerScope, UserRole, Match, UserChangeLog
+from forms import LoginForm, PageForm, UserEditForm
 from datetime import datetime
 from functools import wraps
 import markdown
@@ -155,14 +155,13 @@ def admin_new_page():
             flash('A page with this URL slug already exists.', 'error')
             return render_template('admin/edit_page.html', form=form, page=None)
         
-        page = Page(
-            title=form.title.data,
-            slug=form.slug.data,
-            content=form.content.data,
-            viewer_scope=ViewerScope(form.viewer_scope.data),
-            is_published=form.is_published.data,
-            created_by_id=session['user_id']
-        )
+        page = Page()
+        page.title = form.title.data
+        page.slug = form.slug.data
+        page.content = form.content.data
+        page.viewer_scope = ViewerScope(form.viewer_scope.data)
+        page.is_published = form.is_published.data
+        page.created_by_id = session['user_id']
         
         db.session.add(page)
         db.session.commit()
@@ -255,6 +254,113 @@ def logout():
         flash(f'Goodbye, {session["first_name"]}! You have been logged out.', 'info')
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    """Admin user management"""
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_user(user_id):
+    """Edit user details"""
+    user = User.query.get_or_404(user_id)
+    form = UserEditForm(obj=user)
+    
+    if form.validate_on_submit():
+        # Log changes
+        current_user = User.query.get(session['user_id'])
+        
+        # Check each field for changes and log them
+        if user.first_name != form.first_name.data:
+            log_change = UserChangeLog()
+            log_change.user_id = user.id
+            log_change.field_changed = 'first_name'
+            log_change.old_value = user.first_name
+            log_change.new_value = form.first_name.data
+            log_change.updated_by = current_user.id
+            db.session.add(log_change)
+        
+        if user.last_name != form.last_name.data:
+            log_change = UserChangeLog()
+            log_change.user_id = user.id
+            log_change.field_changed = 'last_name'
+            log_change.old_value = user.last_name
+            log_change.new_value = form.last_name.data
+            log_change.updated_by = current_user.id
+            db.session.add(log_change)
+        
+        if user.email != form.email.data:
+            log_change = UserChangeLog()
+            log_change.user_id = user.id
+            log_change.field_changed = 'email'
+            log_change.old_value = user.email
+            log_change.new_value = form.email.data
+            log_change.updated_by = current_user.id
+            db.session.add(log_change)
+        
+        if user.role.value != form.role.data:
+            log_change = UserChangeLog()
+            log_change.user_id = user.id
+            log_change.field_changed = 'role'
+            log_change.old_value = user.role.value
+            log_change.new_value = form.role.data
+            log_change.updated_by = current_user.id
+            db.session.add(log_change)
+        
+        if user.is_admin != form.is_admin.data:
+            log_change = UserChangeLog()
+            log_change.user_id = user.id
+            log_change.field_changed = 'is_admin'
+            log_change.old_value = str(user.is_admin)
+            log_change.new_value = str(form.is_admin.data)
+            log_change.updated_by = current_user.id
+            db.session.add(log_change)
+        
+        # Update user
+        user.first_name = form.first_name.data
+        user.last_name = form.last_name.data
+        user.email = form.email.data
+        user.role = UserRole(form.role.data)
+        user.is_admin = form.is_admin.data
+        
+        db.session.commit()
+        flash(f'User {user.full_name} updated successfully!', 'success')
+        return redirect(url_for('admin_users'))
+    
+    return render_template('admin/edit_user.html', form=form, user=user)
+
+@app.route('/my-mentees')
+@login_required
+def my_mentees():
+    """Show mentees for current mentor"""
+    current_user = User.query.get(session['user_id'])
+    
+    if current_user.role not in [UserRole.MENTOR, UserRole.BOTH]:
+        flash('You must be a mentor to access this page.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    matches = current_user.get_active_matches_as_mentor()
+    mentees = [match.mentee for match in matches]
+    
+    return render_template('my_mentees.html', mentees=mentees)
+
+@app.route('/my-mentor')
+@login_required
+def my_mentor():
+    """Show mentor for current mentee"""
+    current_user = User.query.get(session['user_id'])
+    
+    if current_user.role not in [UserRole.MENTEE, UserRole.BOTH]:
+        flash('You must be a mentee to access this page.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    matches = current_user.get_active_matches_as_mentee()
+    mentor = matches[0].mentor if matches else None
+    
+    return render_template('my_mentor.html', mentor=mentor)
 
 @app.context_processor
 def inject_user():
