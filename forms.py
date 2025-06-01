@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, SubmitField, TextAreaField, SelectField, BooleanField
+from wtforms import StringField, EmailField, SubmitField, TextAreaField, SelectField, BooleanField, HiddenField
 from wtforms.validators import DataRequired, Email, Length, Regexp
 from models import ViewerScope, UserRole
 
@@ -89,3 +89,34 @@ class UserEditForm(FlaskForm):
     is_admin = BooleanField('Admin Access')
     
     submit = SubmitField('Update User')
+
+
+class FormBuilderForm(FlaskForm):
+    title = StringField('Form Title', validators=[
+        DataRequired(message='Title is required'),
+        Length(max=200, message='Title must not exceed 200 characters')
+    ], render_kw={'placeholder': 'e.g., Mentorship Application'})
+    
+    slug = StringField('URL Slug', validators=[
+        DataRequired(message='URL slug is required'),
+        Length(max=100, message='Slug must not exceed 100 characters'),
+        Regexp(r'^[a-z0-9-]+$', message='Slug must contain only lowercase letters, numbers, and hyphens')
+    ], render_kw={'placeholder': 'e.g., mentorship-application'})
+    
+    viewer_scope = SelectField('Who can access this form?', 
+        choices=[
+            (ViewerScope.ALL_USERS.value, 'All logged-in users'),
+            (ViewerScope.MENTORS_ONLY.value, 'Mentors only'),
+            (ViewerScope.MENTEES_ONLY.value, 'Mentees only'),
+            (ViewerScope.ADMINS_ONLY.value, 'Admins only')
+        ],
+        default=ViewerScope.ALL_USERS.value,
+        validators=[DataRequired()]
+    )
+    
+    is_active = BooleanField('Active', default=True)
+    
+    # Form fields will be handled dynamically in the template
+    fields_json = HiddenField('Fields JSON')
+    
+    submit = SubmitField('Save Form')

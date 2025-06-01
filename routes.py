@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, session, flash, abort
 from app import app, db
-from models import User, Page, ViewerScope, UserRole, Match, UserChangeLog
-from forms import LoginForm, PageForm, UserEditForm
+from models import User, Page, ViewerScope, UserRole, Match, UserChangeLog, Form, Application
+from forms import LoginForm, PageForm, UserEditForm, FormBuilderForm
 from datetime import datetime
 from functools import wraps
 import markdown

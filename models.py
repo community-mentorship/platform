@@ -119,3 +119,37 @@ class UserChangeLog(db.Model):
     
     def __repr__(self):
         return f'<UserChangeLog {self.field_changed} for user:{self.user_id}>'
+
+
+class Form(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(100), unique=True, nullable=False)
+    fields = db.Column(db.JSON, nullable=False)  # Store form field definitions as JSON
+    viewer_scope = db.Column(db.Enum(ViewerScope), default=ViewerScope.ALL_USERS, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    created_by = db.relationship('User', backref=db.backref('forms', lazy=True))
+    applications = db.relationship('Application', backref='form', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Form {self.title}>'
+
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    form_id = db.Column(db.Integer, db.ForeignKey('form.id'), nullable=False)
+    responses = db.Column(db.JSON, nullable=False)  # Store user responses as JSON
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    user = db.relationship('User', backref=db.backref('applications', lazy=True))
+    
+    # Ensure one application per user per form
+    __table_args__ = (db.UniqueConstraint('user_id', 'form_id', name='_user_form_uc'),)
+    
+    def __repr__(self):
+        return f'<Application {self.user.username} -> {self.form.title}>'
