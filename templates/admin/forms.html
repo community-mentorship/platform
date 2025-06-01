@@ -59,9 +59,14 @@
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     {% if form.is_active %}
+                                    <button type="button" class="btn btn-outline-primary" 
+                                            onclick="showFormPreview({{ form.id }})" 
+                                            data-bs-toggle="modal" data-bs-target="#previewModal">
+                                        <i class="fas fa-eye"></i> Preview
+                                    </button>
                                     <a href="{{ url_for('form_view', slug=form.slug) }}" 
-                                       class="btn btn-outline-primary" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> View
+                                       class="btn btn-outline-info btn-sm" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i> Live Form
                                     </a>
                                     {% endif %}
                                     <a href="{{ url_for('admin_edit_form', form_id=form.id) }}" 
@@ -99,4 +104,115 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Form Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store forms data for preview
+const formsData = {{ forms | tojson }};
+
+function showFormPreview(formId) {
+    const form = formsData.find(f => f.id === formId);
+    if (!form) return;
+    
+    let html = `
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">${form.title}</h4>
+            </div>
+            <div class="card-body">
+                <form>
+    `;
+    
+    form.fields.forEach(field => {
+        html += `
+            <div class="mb-3">
+                <label class="form-label">
+                    ${field.label}
+                    ${field.required ? '<span class="text-danger">*</span>' : ''}
+                </label>
+        `;
+        
+        switch (field.type) {
+            case 'text':
+                html += `<input type="text" class="form-control" placeholder="${field.placeholder || ''}" disabled>`;
+                break;
+            case 'textarea':
+                html += `<textarea class="form-control" rows="4" placeholder="${field.placeholder || ''}" disabled></textarea>`;
+                break;
+            case 'email':
+                html += `<input type="email" class="form-control" placeholder="${field.placeholder || 'Enter your email'}" disabled>`;
+                break;
+            case 'url':
+                html += `<input type="url" class="form-control" placeholder="${field.placeholder || 'https://example.com'}" disabled>`;
+                break;
+            case 'select':
+                html += `<select class="form-select" disabled>`;
+                html += `<option>Choose...</option>`;
+                (field.options || []).forEach(option => {
+                    html += `<option>${option}</option>`;
+                });
+                html += `</select>`;
+                break;
+            case 'radio':
+                (field.options || []).forEach(option => {
+                    html += `
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="${field.name}" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                break;
+            case 'checkbox':
+                (field.options || []).forEach(option => {
+                    html += `
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                if (field.max_selections && field.max_selections > 1) {
+                    html += `<small class="text-muted">Select up to ${field.max_selections} options</small>`;
+                }
+                break;
+        }
+        
+        html += `</div>`;
+    });
+    
+    html += `
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" disabled>
+                            Submit Form
+                        </button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <span class="text-danger">*</span> Required fields
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('previewContent').innerHTML = html;
+    document.getElementById('previewModalLabel').textContent = `Preview: ${form.title}`;
+}
+</script>
 {% endblock %}
