@@ -36,6 +36,49 @@
                                 Dashboard
                             </a>
                         </li>
+                        
+                        {% if available_pages %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i data-feather="file-text" class="me-1"></i>
+                                    Resources
+                                </a>
+                                <ul class="dropdown-menu">
+                                    {% for page in available_pages %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('view_page', slug=page.slug) }}">
+                                                <i data-feather="{% if page.viewer_scope.value == 'all' %}users{% elif page.viewer_scope.value == 'admin' %}shield{% elif page.viewer_scope.value == 'mentor' %}user-plus{% else %}user{% endif %}" width="16" height="16" class="me-2"></i>
+                                                {{ page.title }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        {% if current_user.is_admin %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i data-feather="settings" class="me-1"></i>
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                        <i data-feather="bar-chart-2" class="me-2"></i>
+                                        Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_pages') }}">
+                                        <i data-feather="file-text" class="me-2"></i>
+                                        Manage Pages
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_new_page') }}">
+                                        <i data-feather="plus" class="me-2"></i>
+                                        New Page
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
                 
