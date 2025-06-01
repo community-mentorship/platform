@@ -47,7 +47,11 @@ class PageForm(FlaskForm):
             (ViewerScope.ALL_USERS.value, 'All logged-in users'),
             (ViewerScope.MENTORS_ONLY.value, 'Mentors only'),
             (ViewerScope.MENTEES_ONLY.value, 'Mentees only'),
-            (ViewerScope.ADMINS_ONLY.value, 'Admins only')
+            (ViewerScope.ADMINS_ONLY.value, 'Admins only'),
+            (ViewerScope.MATCHED_PAIR.value, 'Both users in a mentor–mentee match'),
+            (ViewerScope.MENTOR_OF.value, 'Mentor of specific mentee'),
+            (ViewerScope.MENTEE_OF.value, 'Mentee of specific mentor'),
+            (ViewerScope.SELF_ONLY.value, 'The user themselves')
         ],
         default=ViewerScope.ALL_USERS.value,
         validators=[DataRequired()]
