@@ -54,55 +54,58 @@ def login():
             email = (form.email.data or '').strip().lower()
             first_name = (form.first_name.data or '').strip()
             last_name = (form.last_name.data or '').strip()
-        except Exception as e:
-            print(f"Error processing form data: {e}")
-            flash(f'Error processing form data: {e}', 'error')
-            return render_template('login.html', form=form)
-        
-        # Check if user exists by username or email
-        user = User.query.filter(
-            (User.username == username) | (User.email == email)
-        ).first()
-        
-        if not user:
-            # Create new user (fake registration)
-            # Make first user admin for demo purposes
-            is_first_user = User.query.count() == 0
-            user = User()
-            user.username = username
-            user.email = email
-            user.first_name = first_name
-            user.last_name = last_name
-            user.is_admin = is_first_user
-            user.role = UserRole.MENTEE
-            user.created_at = datetime.utcnow()
-            db.session.add(user)
-            flash(f'Welcome to the mentorship platform, {first_name}! Your account has been created.', 'success')
-        else:
-            # Update existing user info (but keep username and email if they match existing)
-            if user.username != username and user.email == email:
-                # Same email, different username - update username
+            
+            # Check if user exists by username or email
+            user = User.query.filter(
+                (User.username == username) | (User.email == email)
+            ).first()
+            
+            if not user:
+                # Create new user (fake registration)
+                # Make first user admin for demo purposes
+                is_first_user = User.query.count() == 0
+                user = User()
                 user.username = username
-            elif user.username == username and user.email != email:
-                # Same username, different email - update email
                 user.email = email
-            # Always update name fields
-            user.first_name = first_name
-            user.last_name = last_name
-            flash(f'Welcome back, {first_name}!', 'success')
-        
-        # Update last login
-        user.last_login = datetime.utcnow()
-        db.session.commit()
-        
-        # Set session
-        session['user_id'] = user.id
-        session['username'] = user.username
-        session['first_name'] = user.first_name
-        session['is_admin'] = user.is_admin
-        session['role'] = user.role.value
-        
-        return redirect(url_for('dashboard'))
+                user.first_name = first_name
+                user.last_name = last_name
+                user.is_admin = is_first_user
+                user.role = UserRole.MENTEE
+                user.created_at = datetime.utcnow()
+                db.session.add(user)
+                flash(f'Welcome to the mentorship platform, {first_name}! Your account has been created.', 'success')
+            else:
+                # Update existing user info (but keep username and email if they match existing)
+                if user.username != username and user.email == email:
+                    # Same email, different username - update username
+                    user.username = username
+                elif user.username == username and user.email != email:
+                    # Same username, different email - update email
+                    user.email = email
+                
+                # Always update name fields
+                user.first_name = first_name
+                user.last_name = last_name
+                flash(f'Welcome back, {first_name}!', 'success')
+            
+            # Update last login
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            # Set session
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['first_name'] = user.first_name
+            session['is_admin'] = user.is_admin
+            session['role'] = user.role.value
+            
+            return redirect(url_for('dashboard'))
+            
+        except Exception as e:
+            print(f"Error during login: {e}")
+            flash(f'Error during login: {e}', 'error')
+            db.session.rollback()
+            return render_template('login.html', form=form)
     
     return render_template('login.html', form=form)
 
