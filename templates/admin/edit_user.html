@@ -114,9 +114,10 @@
                     <h6 class="card-title mb-0">Change History</h6>
                 </div>
                 <div class="card-body">
-                    {% if user.change_logs %}
+                    {% set recent_logs = user.change_logs.all() %}
+                    {% if recent_logs %}
                     <div class="small">
-                        {% for log in user.change_logs.order_by(user.change_logs.updated_at.desc()).limit(5) %}
+                        {% for log in recent_logs[-5:] %}
                         <div class="mb-2 pb-2 border-bottom">
                             <strong>{{ log.field_changed.replace('_', ' ').title() }}</strong><br>
                             <span class="text-muted">{{ log.old_value }} → {{ log.new_value }}</span><br>
