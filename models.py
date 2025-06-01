@@ -133,23 +133,23 @@ class Form(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     created_by = db.relationship('User', backref=db.backref('forms', lazy=True))
-    applications = db.relationship('Application', backref='form', lazy='dynamic')
+    submissions = db.relationship('Submission', backref='form', lazy='dynamic')
     
     def __repr__(self):
         return f'<Form {self.title}>'
 
 
-class Application(db.Model):
+class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     form_id = db.Column(db.Integer, db.ForeignKey('form.id'), nullable=False)
     responses = db.Column(db.JSON, nullable=False)  # Store user responses as JSON
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
-    user = db.relationship('User', backref=db.backref('applications', lazy=True))
+    user = db.relationship('User', backref=db.backref('submissions', lazy=True))
     
-    # Ensure one application per user per form
+    # Ensure one submission per user per form
     __table_args__ = (db.UniqueConstraint('user_id', 'form_id', name='_user_form_uc'),)
     
     def __repr__(self):
-        return f'<Application {self.user.username} -> {self.form.title}>'
+        return f'<Submission {self.user.username} -> {self.form.title}>'

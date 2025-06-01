@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, abort
 from app import app, db
-from models import User, Page, ViewerScope, UserRole, Match, UserChangeLog, Form, Application
+from models import User, Page, ViewerScope, UserRole, Match, UserChangeLog, Form, Submission
 from forms import LoginForm, PageForm, UserEditForm, FormBuilderForm
 from datetime import datetime
 from functools import wraps
@@ -484,10 +484,10 @@ def admin_delete_form(form_id):
     form_obj = Form.query.get_or_404(form_id)
     
     try:
-        # Check if form has applications
-        application_count = form_obj.applications.count()
-        if application_count > 0:
-            flash(f'Cannot delete form "{form_obj.title}" - it has {application_count} application(s).', 'error')
+        # Check if form has submissions
+        submission_count = form_obj.submissions.count()
+        if submission_count > 0:
+            flash(f'Cannot delete form "{form_obj.title}" - it has {submission_count} submission(s).', 'error')
         else:
             db.session.delete(form_obj)
             db.session.commit()
@@ -515,15 +515,15 @@ def form_view(slug):
         abort(403)
     
     # Check if user already submitted this form
-    existing_application = Application.query.filter_by(
+    existing_submission = Submission.query.filter_by(
         user_id=user.id, 
         form_id=form_obj.id
     ).first()
     
-    if existing_application:
+    if existing_submission:
         return render_template('application_submitted.html', 
                              form=form_obj, 
-                             application=existing_application)
+                             submission=existing_submission)
     
     return render_template('apply.html', form=form_obj)
 
@@ -544,12 +544,12 @@ def submit_form(slug):
         abort(403)
     
     # Check if user already submitted this form
-    existing_application = Application.query.filter_by(
+    existing_submission = Submission.query.filter_by(
         user_id=user.id, 
         form_id=form_obj.id
     ).first()
     
-    if existing_application:
+    if existing_submission:
         flash('You have already submitted this form.', 'warning')
         return redirect(url_for('form_view', slug=slug))
     
@@ -566,23 +566,23 @@ def submit_form(slug):
         
         responses[field_name] = field_value
     
-    # Create application
+    # Create submission
     try:
-        application = Application(
+        submission = Submission(
             user_id=user.id,
             form_id=form_obj.id,
             responses=responses
         )
-        db.session.add(application)
+        db.session.add(submission)
         db.session.commit()
         
-        flash('Your application has been submitted successfully!', 'success')
+        flash('Your submission has been submitted successfully!', 'success')
         return render_template('application_submitted.html', 
                              form=form_obj, 
-                             application=application)
+                             submission=submission)
     except Exception as e:
         db.session.rollback()
-        flash(f'Error submitting application: {str(e)}', 'error')
+        flash(f'Error submitting form: {str(e)}', 'error')
         return render_template('apply.html', form=form_obj)
 
 
