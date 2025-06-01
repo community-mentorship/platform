@@ -94,10 +94,18 @@
                                         <i data-feather="users" class="me-2"></i>
                                         Manage Users
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_forms') }}">
+                                        <i data-feather="clipboard" class="me-2"></i>
+                                        Application Forms
+                                    </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin_new_page') }}">
                                         <i data-feather="plus" class="me-2"></i>
                                         New Page
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_new_form') }}">
+                                        <i data-feather="plus" class="me-2"></i>
+                                        New Form
                                     </a></li>
                                 </ul>
                             </li>

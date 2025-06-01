@@ -372,6 +372,220 @@ def my_mentor():
     
     return render_template('my_mentor.html', mentor=mentor)
 
+
+@app.route('/admin/forms')
+@admin_required
+@login_required
+def admin_forms():
+    """List all application forms for admin"""
+    forms = Form.query.order_by(Form.created_at.desc()).all()
+    return render_template('admin/forms.html', forms=forms)
+
+
+@app.route('/admin/forms/new', methods=['GET', 'POST'])
+@admin_required
+@login_required
+def admin_new_form():
+    """Create new application form"""
+    form = FormBuilderForm()
+    
+    if form.validate_on_submit():
+        # Default form structure for mentorship application
+        default_fields = [
+            {
+                'type': 'text',
+                'label': 'Full Name',
+                'name': 'full_name',
+                'required': True,
+                'placeholder': 'Enter your full name'
+            },
+            {
+                'type': 'email',
+                'label': 'Email Address',
+                'name': 'email',
+                'required': True,
+                'placeholder': 'Enter your email address'
+            },
+            {
+                'type': 'select',
+                'label': 'I want to be a:',
+                'name': 'role_preference',
+                'required': True,
+                'options': ['Mentor', 'Mentee', 'Both']
+            },
+            {
+                'type': 'textarea',
+                'label': 'Tell us about yourself',
+                'name': 'bio',
+                'required': True,
+                'placeholder': 'Share your background and experience...'
+            }
+        ]
+        
+        new_form = Form(
+            title=form.title.data,
+            slug=form.slug.data,
+            fields=default_fields,
+            viewer_scope=ViewerScope(form.viewer_scope.data),
+            is_active=form.is_active.data,
+            created_by_id=session['user_id']
+        )
+        
+        try:
+            db.session.add(new_form)
+            db.session.commit()
+            flash(f'Application form "{new_form.title}" created successfully!', 'success')
+            return redirect(url_for('admin_forms'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating form: {str(e)}', 'error')
+    
+    return render_template('admin/edit_form.html', form=form, form_obj=None)
+
+
+@app.route('/admin/forms/<int:form_id>/edit', methods=['GET', 'POST'])
+@admin_required
+@login_required
+def admin_edit_form(form_id):
+    """Edit existing application form"""
+    form_obj = Form.query.get_or_404(form_id)
+    form = FormBuilderForm()
+    
+    if form.validate_on_submit():
+        form_obj.title = form.title.data
+        form_obj.slug = form.slug.data
+        form_obj.viewer_scope = ViewerScope(form.viewer_scope.data)
+        form_obj.is_active = form.is_active.data
+        form_obj.updated_at = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+            flash(f'Application form "{form_obj.title}" updated successfully!', 'success')
+            return redirect(url_for('admin_forms'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating form: {str(e)}', 'error')
+    
+    # Pre-populate form with existing data
+    if request.method == 'GET':
+        form.title.data = form_obj.title
+        form.slug.data = form_obj.slug
+        form.viewer_scope.data = form_obj.viewer_scope.value
+        form.is_active.data = form_obj.is_active
+    
+    return render_template('admin/edit_form.html', form=form, form_obj=form_obj)
+
+
+@app.route('/admin/forms/<int:form_id>/delete', methods=['POST'])
+@admin_required
+@login_required
+def admin_delete_form(form_id):
+    """Delete application form"""
+    form_obj = Form.query.get_or_404(form_id)
+    
+    try:
+        # Check if form has applications
+        application_count = form_obj.applications.count()
+        if application_count > 0:
+            flash(f'Cannot delete form "{form_obj.title}" - it has {application_count} application(s).', 'error')
+        else:
+            db.session.delete(form_obj)
+            db.session.commit()
+            flash(f'Application form "{form_obj.title}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting form: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_forms'))
+
+
+@app.route('/apply/<slug>')
+@login_required
+def apply_form(slug):
+    """Show application form to users"""
+    form_obj = Form.query.filter_by(slug=slug, is_active=True).first_or_404()
+    user = User.query.get(session['user_id'])
+    
+    # Check if user can access this form based on viewer scope
+    if form_obj.viewer_scope == ViewerScope.ADMINS_ONLY and not user.is_admin:
+        abort(403)
+    elif form_obj.viewer_scope == ViewerScope.MENTORS_ONLY and user.role not in [UserRole.MENTOR, UserRole.BOTH]:
+        abort(403)
+    elif form_obj.viewer_scope == ViewerScope.MENTEES_ONLY and user.role not in [UserRole.MENTEE, UserRole.BOTH]:
+        abort(403)
+    
+    # Check if user already submitted this form
+    existing_application = Application.query.filter_by(
+        user_id=user.id, 
+        form_id=form_obj.id
+    ).first()
+    
+    if existing_application:
+        return render_template('application_submitted.html', 
+                             form=form_obj, 
+                             application=existing_application)
+    
+    return render_template('apply.html', form=form_obj)
+
+
+@app.route('/apply/<slug>/submit', methods=['POST'])
+@login_required
+def submit_application(slug):
+    """Process application form submission"""
+    form_obj = Form.query.filter_by(slug=slug, is_active=True).first_or_404()
+    user = User.query.get(session['user_id'])
+    
+    # Check if user can access this form based on viewer scope
+    if form_obj.viewer_scope == ViewerScope.ADMINS_ONLY and not user.is_admin:
+        abort(403)
+    elif form_obj.viewer_scope == ViewerScope.MENTORS_ONLY and user.role not in [UserRole.MENTOR, UserRole.BOTH]:
+        abort(403)
+    elif form_obj.viewer_scope == ViewerScope.MENTEES_ONLY and user.role not in [UserRole.MENTEE, UserRole.BOTH]:
+        abort(403)
+    
+    # Check if user already submitted this form
+    existing_application = Application.query.filter_by(
+        user_id=user.id, 
+        form_id=form_obj.id
+    ).first()
+    
+    if existing_application:
+        flash('You have already submitted this application.', 'warning')
+        return redirect(url_for('apply_form', slug=slug))
+    
+    # Collect form responses
+    responses = {}
+    for field in form_obj.fields:
+        field_name = field['name']
+        field_value = request.form.get(field_name, '').strip()
+        
+        # Basic validation
+        if field.get('required', False) and not field_value:
+            flash(f'{field["label"]} is required.', 'error')
+            return render_template('apply.html', form=form_obj)
+        
+        responses[field_name] = field_value
+    
+    # Create application
+    try:
+        application = Application(
+            user_id=user.id,
+            form_id=form_obj.id,
+            responses=responses
+        )
+        db.session.add(application)
+        db.session.commit()
+        
+        flash('Your application has been submitted successfully!', 'success')
+        return render_template('application_submitted.html', 
+                             form=form_obj, 
+                             application=application)
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error submitting application: {str(e)}', 'error')
+        return render_template('apply.html', form=form_obj)
+
+
 @app.context_processor
 def inject_user():
     """Make user info available in all templates"""

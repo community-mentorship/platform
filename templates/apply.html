@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">{{ form.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('submit_application', slug=form.slug) }}">
+                        {% for field in form.fields %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.name }}">
+                                {{ field.label }}
+                                {% if field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {% if field.type == 'text' %}
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                            
+                            {% elif field.type == 'email' %}
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                            
+                            {% elif field.type == 'textarea' %}
+                                <textarea class="form-control" 
+                                          id="{{ field.name }}" 
+                                          name="{{ field.name }}"
+                                          rows="4"
+                                          {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                          {% if field.required %}required{% endif %}></textarea>
+                            
+                            {% elif field.type == 'select' %}
+                                <select class="form-select" 
+                                        id="{{ field.name }}" 
+                                        name="{{ field.name }}"
+                                        {% if field.required %}required{% endif %}>
+                                    <option value="">Choose...</option>
+                                    {% for option in field.options %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Submit Application
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <span class="text-danger">*</span> Required fields
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
