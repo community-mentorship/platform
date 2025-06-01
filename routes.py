@@ -4,6 +4,8 @@ from models import User, Page, ViewerScope
 from forms import LoginForm, PageForm
 from datetime import datetime
 from functools import wraps
+import markdown
+import re
 
 def admin_required(f):
     """Decorator to require admin access"""
@@ -207,6 +209,20 @@ def admin_delete_page(page_id):
     flash(f'Page "{title}" deleted successfully!', 'success')
     return redirect(url_for('admin_pages'))
 
+def process_content(content):
+    """Process markdown content with limited HTML support"""
+    # Configure markdown with extensions
+    md = markdown.Markdown(extensions=['fenced_code', 'tables', 'nl2br'])
+    
+    # Convert markdown to HTML
+    html = md.convert(content)
+    
+    # Allow basic HTML color styling (sanitize input)
+    color_pattern = r'<span\s+style="color:\s*((?:#[0-9a-fA-F]{3,6})|(?:rgb\([^)]+\))|(?:[a-zA-Z]+))"\s*>'
+    html = re.sub(color_pattern, r'<span style="color: \1">', html)
+    
+    return html
+
 # Static Page Routes
 @app.route('/page/<slug>')
 @login_required
@@ -220,7 +236,10 @@ def view_page(slug):
         flash('You do not have permission to view this page.', 'error')
         return redirect(url_for('dashboard'))
     
-    return render_template('page.html', page=page)
+    # Process the content (markdown + limited HTML)
+    processed_content = process_content(page.content)
+    
+    return render_template('page.html', page=page, processed_content=processed_content)
 
 @app.route('/logout')
 def logout():
