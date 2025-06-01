@@ -122,7 +122,19 @@
 
 <script>
 // Store forms data for preview
-const formsData = {{ forms | tojson }};
+const formsData = [
+    {% for form in forms %}
+    {
+        id: {{ form.id }},
+        title: {{ form.title | tojson }},
+        slug: {{ form.slug | tojson }},
+        fields: {{ form.fields | tojson }},
+        viewer_scope: {{ form.viewer_scope.value | tojson }},
+        is_active: {{ form.is_active | tojson }},
+        created_at: {{ form.created_at.isoformat() | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
 
 function showFormPreview(formId) {
     const form = formsData.find(f => f.id === formId);
