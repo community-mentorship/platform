@@ -25,7 +25,20 @@
                                        id="{{ field.name }}" 
                                        name="{{ field.name }}"
                                        {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+                                       {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
                                        {% if field.required %}required{% endif %}>
+                                {% if field.min_length or field.max_length %}
+                                <small class="text-muted">
+                                    {% if field.min_length and field.max_length %}
+                                        {{ field.min_length }}-{{ field.max_length }} characters
+                                    {% elif field.min_length %}
+                                        Minimum {{ field.min_length }} characters
+                                    {% elif field.max_length %}
+                                        Maximum {{ field.max_length }} characters
+                                    {% endif %}
+                                </small>
+                                {% endif %}
                             
                             {% elif field.type == 'email' %}
                                 <input type="email" 
@@ -49,7 +62,20 @@
                                           name="{{ field.name }}"
                                           rows="4"
                                           {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                          {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+                                          {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
                                           {% if field.required %}required{% endif %}></textarea>
+                                {% if field.min_length or field.max_length %}
+                                <small class="text-muted">
+                                    {% if field.min_length and field.max_length %}
+                                        {{ field.min_length }}-{{ field.max_length }} characters
+                                    {% elif field.min_length %}
+                                        Minimum {{ field.min_length }} characters
+                                    {% elif field.max_length %}
+                                        Maximum {{ field.max_length }} characters
+                                    {% endif %}
+                                </small>
+                                {% endif %}
                             
                             {% elif field.type == 'select' %}
                                 <select class="form-select" 

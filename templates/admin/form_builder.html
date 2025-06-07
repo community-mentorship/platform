@@ -256,6 +256,23 @@ function renderFields() {
                                onchange="updateField(${index}, 'max_selections', parseInt(this.value))">
                     </div>
                     ` : ''}
+                    ${field.type === 'text' || field.type === 'textarea' ? `
+                    <div class="mt-2">
+                        <label class="form-label small">Character Limits</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm" placeholder="Min length" 
+                                       value="${field.min_length || ''}" min="0"
+                                       onchange="updateField(${index}, 'min_length', parseInt(this.value) || null)">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm" placeholder="Max length" 
+                                       value="${field.max_length || ''}" min="1"
+                                       onchange="updateField(${index}, 'max_length', parseInt(this.value) || null)">
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="mt-2">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" ${field.required ? 'checked' : ''} 
@@ -318,9 +335,31 @@ function updatePreview() {
         switch (field.type) {
             case 'text':
                 html += `<input type="text" class="form-control" placeholder="${field.placeholder || ''}" disabled>`;
+                if (field.min_length || field.max_length) {
+                    html += `<small class="text-muted">`;
+                    if (field.min_length && field.max_length) {
+                        html += `${field.min_length}-${field.max_length} characters`;
+                    } else if (field.min_length) {
+                        html += `Minimum ${field.min_length} characters`;
+                    } else if (field.max_length) {
+                        html += `Maximum ${field.max_length} characters`;
+                    }
+                    html += `</small>`;
+                }
                 break;
             case 'textarea':
                 html += `<textarea class="form-control" rows="3" placeholder="${field.placeholder || ''}" disabled></textarea>`;
+                if (field.min_length || field.max_length) {
+                    html += `<small class="text-muted">`;
+                    if (field.min_length && field.max_length) {
+                        html += `${field.min_length}-${field.max_length} characters`;
+                    } else if (field.min_length) {
+                        html += `Minimum ${field.min_length} characters`;
+                    } else if (field.max_length) {
+                        html += `Maximum ${field.max_length} characters`;
+                    }
+                    html += `</small>`;
+                }
                 break;
             case 'email':
                 html += `<input type="email" class="form-control" placeholder="${field.placeholder || 'Enter your email'}" disabled>`;

@@ -556,7 +556,20 @@ def form_view(slug):
                              form=form_obj, 
                              submission=existing_submission)
     
-    return render_template('apply.html', form=form_obj)
+    # Process form labels for rich text formatting
+    processed_form = {
+        'id': form_obj.id,
+        'title': form_obj.title,
+        'slug': form_obj.slug,
+        'fields': []
+    }
+    
+    for field in form_obj.fields:
+        processed_field = field.copy()
+        processed_field['label'] = process_form_label(field.get('label', ''))
+        processed_form['fields'].append(processed_field)
+    
+    return render_template('apply.html', form=processed_form)
 
 
 @app.route('/form/<slug>/submit', methods=['POST'])
@@ -618,15 +631,28 @@ def submit_form(slug):
             
             # Type-specific validation
             if field_value:  # Only validate if value is provided
+                # Character length validation for text fields
+                if field_type in ['text', 'textarea']:
+                    min_length = field.get('min_length')
+                    max_length = field.get('max_length')
+                    
+                    if min_length and len(field_value) < min_length:
+                        flash(f'{field["label"]}: Must be at least {min_length} characters long.', 'error')
+                        return render_template('apply.html', form=form_obj)
+                    
+                    if max_length and len(field_value) > max_length:
+                        flash(f'{field["label"]}: Must not exceed {max_length} characters.', 'error')
+                        return render_template('apply.html', form=form_obj)
+                
+                # Email format validation
                 if field_type == 'email':
-                    import re
                     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
                     if not re.match(email_pattern, field_value):
                         flash(f'{field["label"]}: Please enter a valid email address.', 'error')
                         return render_template('apply.html', form=form_obj)
                 
+                # URL format validation
                 elif field_type == 'url':
-                    import re
                     url_pattern = r'^https?://.+\..+'
                     if not re.match(url_pattern, field_value):
                         flash(f'{field["label"]}: Please enter a valid URL (starting with http:// or https://).', 'error')
