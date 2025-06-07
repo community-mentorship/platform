@@ -240,6 +240,25 @@ def process_content(content):
     
     return html
 
+def process_form_label(text):
+    """Process form labels with simple markdown-like formatting"""
+    if not text:
+        return ''
+    
+    # Bold: **text** -> <strong>text</strong>
+    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+    
+    # Italic: *text* -> <em>text</em>
+    text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+    
+    # Links: [text](url) -> <a href="url" target="_blank" rel="noopener">text</a>
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank" rel="noopener">\1</a>', text)
+    
+    # Line breaks
+    text = text.replace('\n', '<br>')
+    
+    return text
+
 # Static Page Routes
 @app.route('/page/<slug>')
 @login_required

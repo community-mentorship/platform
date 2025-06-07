@@ -232,8 +232,10 @@ function renderFields() {
                     </div>
                     <div class="mt-2">
                         <label class="form-label small">Label</label>
-                        <input type="text" class="form-control form-control-sm" value="${field.label}" 
-                               onchange="updateField(${index}, 'label', this.value)">
+                        <textarea class="form-control form-control-sm" rows="2" 
+                                  onchange="updateField(${index}, 'label', this.value)"
+                                  placeholder="Supports **bold**, *italic*, and [links](url)">${field.label}</textarea>
+                        <small class="text-muted">Supports basic formatting: **bold**, *italic*, [link text](url)</small>
                     </div>
                     <div class="mt-2">
                         <label class="form-label small">Placeholder</label>
@@ -271,6 +273,21 @@ function renderFields() {
     document.getElementById('fields-json').value = JSON.stringify(formFields);
 }
 
+// Simple markdown-like formatting parser
+function formatLabel(text) {
+    if (!text) return '';
+    
+    return text
+        // Bold: **text** -> <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic: *text* -> <em>text</em>
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Links: [text](url) -> <a href="url">text</a>
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        // Line breaks
+        .replace(/\n/g, '<br>');
+}
+
 function updatePreview() {
     const preview = document.getElementById('form-preview');
     const formTitle = document.getElementById('form-title').value || 'Untitled Form';
@@ -296,7 +313,7 @@ function updatePreview() {
     
     formFields.forEach(field => {
         html += `<div class="mb-3">`;
-        html += `<label class="form-label">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
+        html += `<label class="form-label">${formatLabel(field.label)}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
         
         switch (field.type) {
             case 'text':
