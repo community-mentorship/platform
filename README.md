@@ -1,36 +1,24 @@
 # Mentorship Platform
 
-A comprehensive mentorship program management platform built for Lenny's Slack community. This web application enables members to apply as mentors/mentees, view match results, track session progress, with full administrative capabilities for managing applications and monitoring program health.
+A comprehensive mentorship program management platform built for communities. This web application enables members to apply as mentors/mentees, view match results, track session progress, with full administrative capabilities for managing applications and monitoring program health.
 
-## Features
 
-### Core Functionality
-- **User Authentication**: Simple session-based login system
-- **Role Management**: Support for Mentors, Mentees, and Both roles
-- **Admin Dashboard**: Complete "Backstage" administrative interface
-- **Dynamic Form Builder**: Create custom application forms with rich formatting
+## Why
+We built a mentorship program on Coda and ran it for 2 years. 
+- The original mentorship program on Coda has problems, including a lack of a test environment, performance issues, and a complex architecture due to shared permission constraints. 
+- AI tooling popping up, we like to try and learn how to use AI to code.
 
-### Enhanced Form Builder (Cycle 5)
-- **Rich Text Formatting**: Bold, italic, and hyperlink support in form labels
-- **Advanced Validation**: Character limits, email validation, URL validation
-- **Multiple Field Types**: Text, textarea, email, URL, dropdown, radio buttons, checkboxes
-- **Live Preview**: Real-time form preview with formatted labels
-- **Selection Limits**: Configurable maximum selections for checkbox fields
-- **Validation Hints**: User-friendly character count and format guidance
+### Goal
+- Make a new mentorship program for the Fall 2025 Cohort
+- Build it in public to share the learning
+- The new program is open source; it can potentially be monetized by other organizations looking to run similar programs.
 
-### User Management
-- **Profile Management**: Edit user details, roles, and admin status
-- **Change Tracking**: Complete audit log of user modifications
-- **Mentor-Mentee Matching**: Track active mentorship relationships
-- **Scoped Access Control**: Granular permissions for different user types
+## What 
+This project rebuilds our mentorship program, originally managed in Coda, into a full-featured web application. It retains all existing functionality while improving security, scalability, and maintainability. 
+- Built with Flask (a Python framework) and deployed on Replit, the platform supports mentor/mentee workflows, session tracking, and admin tools in a unified system.
+- Create one frontend (for mentors and mentees) and one backstage (for admins), with clearly defined roles and permissions.
 
-### Content Management
-- **Static Pages**: Create and manage informational pages
-- **Markdown Support**: Rich content formatting with HTML rendering
-- **Access Control**: Page-level permissions based on user roles and relationships
-
-## Technology Stack
-
+### Technology Stack
 - **Backend**: Flask (Python) with SQLAlchemy ORM
 - **Database**: PostgreSQL with full migration support
 - **Frontend**: Server-side rendered templates with Bootstrap 5
@@ -38,36 +26,46 @@ A comprehensive mentorship program management platform built for Lenny's Slack c
 - **Forms**: WTForms with enhanced validation
 - **Testing**: Comprehensive end-to-end test suite
 
-## Project Structure
+#Getting Start 
 
-```
-├── app.py              # Flask application setup
-├── main.py             # Application entry point
-├── models.py           # Database models and relationships
-├── routes.py           # URL routing and view logic
-├── forms.py            # Form definitions and validation
-├── templates/          # Jinja2 templates
-│   ├── admin/         # Administrative interface templates
-│   └── *.html         # User-facing templates
-├── static/            # CSS, JavaScript, and assets
-├── test_*.py          # Comprehensive test suites
-└── demo_*.py          # Demonstration scripts
-```
+## Core features
+
+### For Administrators
+1. Access the admin dashboard at `/admin`
+2. Create and manage application forms with the enhanced form builder
+3. View and edit user profiles and roles
+4. Monitor form submissions and program activity
+
+### For Users
+1. Complete the registration process
+2. Fill out application forms
+3. View mentorship matches and relationships
+4. Access role-specific content and resources
+5. Record mentorship sesssions 
+6. Report issues and feedback anytime
+
+## How to collaborate 
+- Code is pushed to GitHub here
+- We split tasks and work in separate branches, then review and merge into main
+- We'll define a staging environment for testing updates before release
+- For non-coders, you can test live updates here:
+👉[ https://mentorship-ijac.replit.app/login](https://mentorship-ijac.replit.app/login) (currently live up to Cycle 4, 2025/6/1)
+- You can use Replit for vibe coding and Cursor for precise edits and Git integration.
 
 ## Development Approach
 
 This project follows a **cycle-based development methodology** with 6-hour weekly cycles:
 
-- **Cycle 1**: Flask foundation and basic authentication
-- **Cycle 2**: Admin dashboard and user management
-- **Cycle 3**: Role-based permissions and access control
-- **Cycle 4**: Complete form system with submissions
+- **Cycle 1**: Flask foundation and basic authentication ✅
+- **Cycle 2**: Admin dashboard and user management ✅
+- **Cycle 3**: Role-based permissions and access control ✅
+- **Cycle 4**: Complete form system with submissions ✅
 - **Cycle 5**: Enhanced form builder with rich formatting ✅
 
 Each cycle delivers a complete, tested, and deployable feature set.
 
-## Getting Started
 
+## How to use 
 ### Prerequisites
 - Python 3.11+
 - PostgreSQL database
@@ -117,41 +115,6 @@ python test_form_features.py
 python test_form_builder_e2e.py
 ```
 
-## Usage
-
-### For Administrators
-1. Access the admin dashboard at `/admin`
-2. Create and manage application forms with the enhanced form builder
-3. View and edit user profiles and roles
-4. Monitor form submissions and program activity
-
-### For Users
-1. Complete the registration process
-2. Fill out application forms
-3. View mentorship matches and relationships
-4. Access role-specific content and resources
-
-## Key Features in Detail
-
-### Enhanced Form Builder
-The form builder supports sophisticated form creation with:
-- **Rich labels**: `**Bold text**`, `*italic text*`, `[links](URL)`
-- **Validation rules**: Character limits, format checking
-- **Field types**: Text, email, URL, textarea, select, radio, checkbox
-- **User guidance**: Placeholder text, validation hints, character counters
-
-### Access Control System
-Granular permission system supporting:
-- All users, mentors only, mentees only, admins only
-- Matched pairs, specific mentor-mentee relationships
-- Self-only access for personal content
-
-### Audit Trail
-Complete change tracking for:
-- User profile modifications
-- Role changes
-- Administrative actions
-- Form submissions and updates
 
 ## Contributing
 
@@ -159,8 +122,8 @@ This project is part of Lenny's Slack community mentorship program. Contribution
 
 ## License
 
-This project is proprietary software developed for Lenny's Slack community mentorship program.
+Open Source License TBD
 
 ## Support
 
-For technical issues or feature requests, please contact the development team through the community Slack workspace.
+For technical issues or feature requests, please contact the development team in Discussion.
