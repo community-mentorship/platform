@@ -40,7 +40,7 @@ Each cycle delivers a complete, tested, and deployable feature set.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/community-mentorship/mentorship-platform.git
+git clone https://github.com/community-mentorship/platform.git
 cd mentorship-platform
 ```
 
@@ -81,9 +81,6 @@ python test_form_builder_e2e.py
 ```
 
 
-## Contributing
-
-This project is part of Lenny's Slack community mentorship program. Contributions should align with the community guidelines and project roadmap.
 
 ## License
 
