@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">{{ form.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('submit_form', slug=form.slug) }}">
+                        {% for field in form.fields %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.name }}">
+                                {{ field.label | safe }}
+                                {% if field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {% if field.type == 'text' %}
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+                                       {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                                {% if field.min_length or field.max_length %}
+                                <small class="text-muted">
+                                    {% if field.min_length and field.max_length %}
+                                        {{ field.min_length }}-{{ field.max_length }} characters
+                                    {% elif field.min_length %}
+                                        Minimum {{ field.min_length }} characters
+                                    {% elif field.max_length %}
+                                        Maximum {{ field.max_length }} characters
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            
+                            {% elif field.type == 'email' %}
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                            
+                            {% elif field.type == 'url' %}
+                                <input type="url" 
+                                       class="form-control" 
+                                       id="{{ field.name }}" 
+                                       name="{{ field.name }}"
+                                       {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                       {% if field.required %}required{% endif %}>
+                            
+                            {% elif field.type == 'textarea' %}
+                                <textarea class="form-control" 
+                                          id="{{ field.name }}" 
+                                          name="{{ field.name }}"
+                                          rows="4"
+                                          {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                          {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+                                          {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
+                                          {% if field.required %}required{% endif %}></textarea>
+                                {% if field.min_length or field.max_length %}
+                                <small class="text-muted">
+                                    {% if field.min_length and field.max_length %}
+                                        {{ field.min_length }}-{{ field.max_length }} characters
+                                    {% elif field.min_length %}
+                                        Minimum {{ field.min_length }} characters
+                                    {% elif field.max_length %}
+                                        Maximum {{ field.max_length }} characters
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            
+                            {% elif field.type == 'select' %}
+                                <select class="form-select" 
+                                        id="{{ field.name }}" 
+                                        name="{{ field.name }}"
+                                        {% if field.required %}required{% endif %}>
+                                    <option value="">Choose...</option>
+                                    {% for option in field.options %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            
+                            {% elif field.type == 'radio' %}
+                                {% for option in field.options %}
+                                <div class="form-check">
+                                    <input type="radio" 
+                                           class="form-check-input" 
+                                           id="{{ field.name }}_{{ loop.index }}" 
+                                           name="{{ field.name }}"
+                                           value="{{ option }}"
+                                           {% if field.required %}required{% endif %}>
+                                    <label class="form-check-label" for="{{ field.name }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            
+                            {% elif field.type == 'checkbox' %}
+                                {% for option in field.options %}
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input checkbox-group" 
+                                           id="{{ field.name }}_{{ loop.index }}" 
+                                           name="{{ field.name }}"
+                                           value="{{ option }}"
+                                           data-group="{{ field.name }}"
+                                           data-max="{{ field.max_selections or 1 }}">
+                                    <label class="form-check-label" for="{{ field.name }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if field.max_selections and field.max_selections > 1 %}
+                                <small class="text-muted">Select up to {{ field.max_selections }} options</small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Submit Form
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <span class="text-danger">*</span> Required fields
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Checkbox group validation
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxGroups = {};
+    
+    // Group checkboxes by field name
+    document.querySelectorAll('.checkbox-group').forEach(function(checkbox) {
+        const group = checkbox.dataset.group;
+        const maxSelections = parseInt(checkbox.dataset.max);
+        
+        if (!checkboxGroups[group]) {
+            checkboxGroups[group] = {
+                checkboxes: [],
+                max: maxSelections
+            };
+        }
+        checkboxGroups[group].checkboxes.push(checkbox);
+        
+        // Add event listener for each checkbox
+        checkbox.addEventListener('change', function() {
+            const checkedBoxes = checkboxGroups[group].checkboxes.filter(cb => cb.checked);
+            
+            if (checkedBoxes.length >= maxSelections) {
+                // Disable unchecked boxes
+                checkboxGroups[group].checkboxes.forEach(cb => {
+                    if (!cb.checked) {
+                        cb.disabled = true;
+                    }
+                });
+            } else {
+                // Enable all boxes
+                checkboxGroups[group].checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

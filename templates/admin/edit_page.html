@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}{% if page %}Edit Page{% else %}New Page{% endif %} - Admin{% endblock %}
+
+{% block main_class %}py-4{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('admin_pages') }}" class="btn btn-outline-secondary me-3">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Pages
+                </a>
+                <div>
+                    <h1 class="h3 mb-1">{% if page %}Edit Page{% else %}Create New Page{% endif %}</h1>
+                    <p class="text-muted mb-0">{% if page %}Update content and settings{% else %}Add a new static page to the platform{% endif %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Page Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">This will be displayed as the page headline</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.slug.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">/page/</span>
+                                {{ form.slug(class="form-control" + (" is-invalid" if form.slug.errors else "")) }}
+                            </div>
+                            {% if form.slug.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.slug.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">URL-friendly version (lowercase, hyphens only)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label d-flex justify-content-between") }}
+                            <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Formatting help">
+                                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('**', '**')" title="Bold">
+                                    <strong>B</strong>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('*', '*')" title="Italic">
+                                    <em>I</em>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('# ', '')" title="Heading">
+                                    H1
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('- ', '')" title="List">
+                                    List
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="insertMarkdown('[text](', 'url)')" title="Link">
+                                    Link
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePreview()" id="previewBtn">
+                                    Preview
+                                </button>
+                            </div>
+                            
+                            <div id="editorContainer">
+                                {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), style="min-height: 300px; font-family: monospace;") }}
+                            </div>
+                            
+                            <div id="previewContainer" style="display: none;">
+                                <div class="border rounded p-3 bg-light" style="min-height: 300px;" id="previewContent">
+                                    Preview will appear here...
+                                </div>
+                            </div>
+                            
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.content.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <strong>Markdown Support:</strong> 
+                                **bold**, *italic*, # headings, - lists, [links](url), `code`<br>
+                                <strong>HTML Colors:</strong> 
+                                &lt;span style="color: red"&gt;red text&lt;/span&gt;, 
+                                &lt;span style="color: #0066cc"&gt;blue text&lt;/span&gt;
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.viewer_scope.label(class="form-label") }}
+                                {{ form.viewer_scope(class="form-select" + (" is-invalid" if form.viewer_scope.errors else "")) }}
+                                {% if form.viewer_scope.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.viewer_scope.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Publication Status</label>
+                                <div class="form-check form-switch">
+                                    {{ form.is_published(class="form-check-input") }}
+                                    {{ form.is_published.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">Only published pages are visible to users</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_pages') }}" class="btn btn-secondary">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Page Preview</h6>
+                </div>
+                <div class="card-body">
+                    {% if page %}
+                        <dl class="row small">
+                            <dt class="col-sm-4">Created:</dt>
+                            <dd class="col-sm-8">{{ page.created_at.strftime('%b %d, %Y') }}</dd>
+                            
+                            <dt class="col-sm-4">Updated:</dt>
+                            <dd class="col-sm-8">{{ page.updated_at.strftime('%b %d, %Y') }}</dd>
+                            
+                            <dt class="col-sm-4">Author:</dt>
+                            <dd class="col-sm-8">{{ page.created_by.full_name }}</dd>
+                        </dl>
+                        
+                        {% if page.is_published %}
+                            <a href="{{ url_for('view_page', slug=page.slug) }}" class="btn btn-outline-primary btn-sm w-100" target="_blank">
+                                <i data-feather="external-link" class="me-1"></i>
+                                View Live Page
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted small">Page details will appear here after creation.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Visibility Guide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="mb-2">
+                            <span class="badge bg-primary me-2">All</span>
+                            Any logged-in user
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-success me-2">Mentor</span>
+                            Only mentors and both-role users
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-info me-2">Mentee</span>
+                            Only mentees and both-role users
+                        </div>
+                        <div class="mb-0">
+                            <span class="badge bg-danger me-2">Admin</span>
+                            Only administrators
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+<script>
+// Auto-generate slug from title
+document.addEventListener('DOMContentLoaded', function() {
+    const titleField = document.getElementById('title');
+    const slugField = document.getElementById('slug');
+    
+    if (titleField && slugField && !slugField.value) {
+        titleField.addEventListener('input', function() {
+            const slug = this.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim('-');
+            slugField.value = slug;
+        });
+    }
+    
+    // Configure marked options
+    marked.setOptions({
+        breaks: true,
+        gfm: true
+    });
+});
+
+// Markdown editor functions
+function insertMarkdown(before, after) {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    const newText = before + selectedText + after;
+    textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+    
+    // Set cursor position
+    const newCursorPos = start + before.length + selectedText.length;
+    textarea.setSelectionRange(newCursorPos, newCursorPos);
+    textarea.focus();
+    
+    // Update preview if visible
+    if (document.getElementById('previewContainer').style.display !== 'none') {
+        updatePreview();
+    }
+}
+
+function togglePreview() {
+    const editorContainer = document.getElementById('editorContainer');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewBtn = document.getElementById('previewBtn');
+    
+    if (previewContainer.style.display === 'none' || previewContainer.style.display === '') {
+        // Show preview
+        editorContainer.style.display = 'none';
+        previewContainer.style.display = 'block';
+        previewBtn.textContent = 'Edit';
+        previewBtn.classList.add('active');
+        updatePreview();
+    } else {
+        // Show editor
+        editorContainer.style.display = 'block';
+        previewContainer.style.display = 'none';
+        previewBtn.textContent = 'Preview';
+        previewBtn.classList.remove('active');
+    }
+}
+
+function updatePreview() {
+    const content = document.getElementById('content').value;
+    const previewContent = document.getElementById('previewContent');
+    
+    // Process markdown
+    let html = marked.parse(content);
+    
+    // Allow basic HTML color styling
+    html = html.replace(/<span\s+style="color:\s*([^"]+)"\s*>/g, '<span style="color: $1">');
+    
+    previewContent.innerHTML = html;
+}
+
+// Real-time preview update
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('content');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            if (document.getElementById('previewContainer').style.display !== 'none') {
+                updatePreview();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

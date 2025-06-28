@@ -1,0 +1,49 @@
+## 🌀 Cycle 3: Admin User Management + Scoped Views
+
+**Goal**
+
+Allow admins to manage user roles from a simple UI, and establish a flexible access control system (`viewer_scope`) to define who can view specific content or data based on roles and match relationships.
+
+---
+
+**Outcome**
+
+Admins can view and edit user records through a table-based UI. All changes are logged. The access model is extended to support fine-grained visibility based on role, match, or ownership—laying the groundwork for scoped content like matches, reports, and notes.
+
+---
+
+**What You’ll Have at the End**
+
+- 👥 Admin interface to view and edit user list
+- 📝 Automatic logging of user changes
+- 🧑‍🏫 Mentors can see only their matched mentees (`/my-mentees`)
+- 👩‍🎓 Mentees can see only their assigned mentor (`/my-mentor`)
+- 🧩 A clear and flexible set of `viewer_scope` values for future scoped content
+
+---
+
+**To Do**
+
+- [ ]  Extend `User` table:
+    - Fields: `id`, `name`, `email`, `role` (enum: mentor, mentee, both), `is_admin` (bool)
+- [ ]  Create admin UI (e.g. `/admin/users`) with inline table editing:
+    - Edit name, email, role, admin flag directly
+- [ ]  Create `UserChangeLog` table:
+    - Fields: `id`, `user_id`, `field_changed`, `old_value`, `new_value`, `updated_by`, `updated_at`
+- [ ]  Implement change logging logic for admin edits
+- [ ]  Create `Match` table:
+    - Fields: `id`, `mentor_id`, `mentee_id`, `matched_at`
+- [ ]  Build `/my-mentees`: for users with mentor role, shows their assigned mentees
+- [ ]  Build `/my-mentor`: for mentees to see their mentor
+- [ ]  Define and implement the following `viewer_scope` values:
+
+| `viewer_scope` | Who Can View | Example Uses |
+| --- | --- | --- |
+| `all_users` | All signed-in users | Announcements, FAQ |
+| `mentors_only` | Users with mentor role | Mentor guide, select mentees, report ghost |
+| `mentees_only` | Users with mentee role | Mentee guide, commit to mentor, report ghost |
+| `admins_only` | Admins only | Admin dashboard, logs, analytics |
+| `matched_pair` | Both users in a mentor–mentee match | Session logs, shared notes |
+| `mentor_of` | Mentor of specific mentee | Private view of mentee info, write notes |
+| `mentee_of` | Mentee of specific mentor | View assigned mentor, write notes |
+| `self_only` | The user themselves | Application form, personal settings |

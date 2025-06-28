@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mentorship Platform{% endblock %}
+
+{% block main_class %}py-4{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i data-feather="user" width="24" height="24" class="text-white"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="h3 mb-1">Welcome back, {{ user.first_name }}!</h1>
+                    <p class="text-muted mb-0">Ready to connect and grow through mentorship?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Info Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center">
+                    <i data-feather="user-check" class="me-2"></i>
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Full Name:</dt>
+                        <dd class="col-sm-7">{{ user.full_name }}</dd>
+                        
+                        <dt class="col-sm-5">Username:</dt>
+                        <dd class="col-sm-7">{{ user.username }}</dd>
+                        
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">{{ user.email }}</dd>
+                        
+                        <dt class="col-sm-5">Member Since:</dt>
+                        <dd class="col-sm-7">{{ user.created_at.strftime('%B %d, %Y') }}</dd>
+                        
+                        {% if user.last_login %}
+                        <dt class="col-sm-5">Last Login:</dt>
+                        <dd class="col-sm-7">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center">
+                    <i data-feather="zap" class="me-2"></i>
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i data-feather="user-plus" width="32" height="32" class="text-success mb-2"></i>
+                                    <h6 class="card-title">Become a Mentor</h6>
+                                    <p class="card-text small text-muted">Share your expertise and help others grow</p>
+                                    <button class="btn btn-success btn-sm" disabled>
+                                        Coming in Cycle 3
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i data-feather="search" width="32" height="32" class="text-info mb-2"></i>
+                                    <h6 class="card-title">Find a Mentor</h6>
+                                    <p class="card-text small text-muted">Connect with experienced professionals</p>
+                                    <button class="btn btn-info btn-sm" disabled>
+                                        Coming in Cycle 3
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% if user.is_admin %}
+                            <div class="col-md-12 mt-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <i data-feather="settings" width="32" height="32" class="text-warning mb-2"></i>
+                                        <h6 class="card-title">Backstage</h6>
+                                        <p class="card-text small text-muted">Manage content, users, and platform settings</p>
+                                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-warning btn-sm">
+                                            <i data-feather="arrow-right" class="me-1"></i>
+                                            Enter Backstage
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary bg-opacity-10 border-primary">
+                <div class="card-body text-center">
+                    <i data-feather="users" width="32" height="32" class="text-primary mb-2"></i>
+                    <h3 class="h4 text-primary mb-1">0</h3>
+                    <p class="small text-muted mb-0">Active Connections</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success bg-opacity-10 border-success">
+                <div class="card-body text-center">
+                    <i data-feather="calendar" width="32" height="32" class="text-success mb-2"></i>
+                    <h3 class="h4 text-success mb-1">0</h3>
+                    <p class="small text-muted mb-0">Sessions Completed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning bg-opacity-10 border-warning">
+                <div class="card-body text-center">
+                    <i data-feather="clock" width="32" height="32" class="text-warning mb-2"></i>
+                    <h3 class="h4 text-warning mb-1">0</h3>
+                    <p class="small text-muted mb-0">Pending Matches</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info bg-opacity-10 border-info">
+                <div class="card-body text-center">
+                    <i data-feather="star" width="32" height="32" class="text-info mb-2"></i>
+                    <h3 class="h4 text-info mb-1">0</h3>
+                    <p class="small text-muted mb-0">Reviews Given</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Message -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="alert alert-info border-0">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i data-feather="info" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <h6 class="alert-heading">Welcome to the Mentorship Platform!</h6>
+                        <p class="mb-0">
+                            This is Cycle 1 of our development process. You're seeing the foundational authentication system and dashboard layout. 
+                            In upcoming cycles, we'll add mentor/mentee applications, matching algorithms, session tracking, and admin features.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

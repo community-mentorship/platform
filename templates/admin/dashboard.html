@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Mentorship Platform{% endblock %}
+
+{% block main_class %}py-4{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-1">Admin Dashboard</h1>
+                    <p class="text-muted mb-0">Manage content and monitor platform activity</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_new_page') }}" class="btn btn-primary">
+                        <i data-feather="plus" class="me-2"></i>
+                        New Page
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary bg-opacity-10 border-primary">
+                <div class="card-body text-center">
+                    <i data-feather="users" width="32" height="32" class="text-primary mb-2"></i>
+                    <h3 class="h4 text-primary mb-1">{{ total_users }}</h3>
+                    <p class="small text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success bg-opacity-10 border-success">
+                <div class="card-body text-center">
+                    <i data-feather="file-text" width="32" height="32" class="text-success mb-2"></i>
+                    <h3 class="h4 text-success mb-1">{{ total_pages }}</h3>
+                    <p class="small text-muted mb-0">Total Pages</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info bg-opacity-10 border-info">
+                <div class="card-body text-center">
+                    <i data-feather="eye" width="32" height="32" class="text-info mb-2"></i>
+                    <h3 class="h4 text-info mb-1">{{ published_pages }}</h3>
+                    <p class="small text-muted mb-0">Published Pages</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning bg-opacity-10 border-warning">
+                <div class="card-body text-center">
+                    <i data-feather="eye-off" width="32" height="32" class="text-warning mb-2"></i>
+                    <h3 class="h4 text-warning mb-1">{{ total_pages - published_pages }}</h3>
+                    <p class="small text-muted mb-0">Draft Pages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i data-feather="activity" class="me-2"></i>
+                    <h5 class="mb-0">Recent Pages</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_pages %}
+                        <div class="list-group list-group-flush">
+                            {% for page in recent_pages %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ page.title }}</h6>
+                                        <small class="text-muted">
+                                            <i data-feather="{% if page.viewer_scope.value == 'all' %}users{% elif page.viewer_scope.value == 'admin' %}shield{% elif page.viewer_scope.value == 'mentor' %}user-plus{% else %}user{% endif %}" width="14" height="14" class="me-1"></i>
+                                            {{ page.viewer_scope.value.title() }} • Updated {{ page.updated_at.strftime('%b %d, %Y') }}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        {% if page.is_published %}
+                                            <span class="badge bg-success">Published</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                        <a href="{{ url_for('admin_edit_page', page_id=page.id) }}" class="btn btn-sm btn-outline-secondary ms-2">
+                                            <i data-feather="edit-2" width="14" height="14"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('admin_pages') }}" class="btn btn-outline-primary">
+                                View All Pages
+                                <i data-feather="arrow-right" class="ms-1"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="file-plus" width="48" height="48" class="text-muted mb-3"></i>
+                            <p class="text-muted">No pages created yet.</p>
+                            <a href="{{ url_for('admin_new_page') }}" class="btn btn-primary">Create First Page</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i data-feather="zap" class="me-2"></i>
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin_new_page') }}" class="btn btn-primary">
+                            <i data-feather="plus" class="me-2"></i>
+                            Create New Page
+                        </a>
+                        <a href="{{ url_for('admin_pages') }}" class="btn btn-outline-secondary">
+                            <i data-feather="file-text" class="me-2"></i>
+                            Manage Pages
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                            <i data-feather="users" class="me-2"></i>
+                            Manage Users
+                        </a>
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i data-feather="mail" class="me-2"></i>
+                            Email Settings (Cycle 7)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Development Note -->
+    <div class="row">
+        <div class="col">
+            <div class="alert alert-info border-0">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i data-feather="info" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <h6 class="alert-heading">Cycle 2 - Admin Dashboard Complete!</h6>
+                        <p class="mb-0">
+                            You can now create static pages with role-based permissions. Users will see different pages based on their roles (mentor, mentee, admin). 
+                            Next cycles will add form integration, matching systems, and user management.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

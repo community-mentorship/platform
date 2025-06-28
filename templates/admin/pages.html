@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Pages - Admin{% endblock %}
+
+{% block main_class %}py-4{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-1">Manage Pages</h1>
+                    <p class="text-muted mb-0">Create and edit static content pages</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_new_page') }}" class="btn btn-primary">
+                        <i data-feather="plus" class="me-2"></i>
+                        New Page
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pages List -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">All Pages</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if pages %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>URL</th>
+                                        <th>Visibility</th>
+                                        <th>Status</th>
+                                        <th>Updated</th>
+                                        <th width="120">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for page in pages %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ page.title }}</strong>
+                                            </td>
+                                            <td>
+                                                <code>/page/{{ page.slug }}</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if page.viewer_scope.value == 'all' %}bg-primary{% elif page.viewer_scope.value == 'admin' %}bg-danger{% elif page.viewer_scope.value == 'mentor' %}bg-success{% else %}bg-info{% endif %}">
+                                                    <i data-feather="{% if page.viewer_scope.value == 'all' %}users{% elif page.viewer_scope.value == 'admin' %}shield{% elif page.viewer_scope.value == 'mentor' %}user-plus{% else %}user{% endif %}" width="12" height="12" class="me-1"></i>
+                                                    {{ page.viewer_scope.value.title() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if page.is_published %}
+                                                    <span class="badge bg-success">Published</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Draft</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ page.updated_at.strftime('%b %d, %Y') }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    {% if page.is_published %}
+                                                        <a href="{{ url_for('view_page', slug=page.slug) }}" class="btn btn-outline-primary" target="_blank">
+                                                            <i data-feather="eye" width="14" height="14"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    <a href="{{ url_for('admin_edit_page', page_id=page.id) }}" class="btn btn-outline-secondary">
+                                                        <i data-feather="edit-2" width="14" height="14"></i>
+                                                    </a>
+                                                    <form method="POST" action="{{ url_for('admin_delete_page', page_id=page.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this page?');">
+                                                        <button type="submit" class="btn btn-outline-danger">
+                                                            <i data-feather="trash-2" width="14" height="14"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="file-plus" width="48" height="48" class="text-muted mb-3"></i>
+                            <h5 class="text-muted">No pages created yet</h5>
+                            <p class="text-muted mb-4">Create your first static page to get started.</p>
+                            <a href="{{ url_for('admin_new_page') }}" class="btn btn-primary">
+                                <i data-feather="plus" class="me-2"></i>
+                                Create First Page
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

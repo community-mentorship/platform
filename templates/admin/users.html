@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Backstage{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>User Management</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Backstage</a></li>
+                <li class="breadcrumb-item active">Users</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">All Users ({{ users|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Admin</th>
+                                    <th>Joined</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ user.full_name }}</strong>
+                                        {% if user.is_admin %}
+                                        <span class="badge bg-warning text-dark ms-1">Admin</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td><code>{{ user.username }}</code></td>
+                                    <td>
+                                        {% if user.role.value == 'mentor' %}
+                                        <span class="badge bg-info">Mentor</span>
+                                        {% elif user.role.value == 'mentee' %}
+                                        <span class="badge bg-success">Mentee</span>
+                                        {% elif user.role.value == 'both' %}
+                                        <span class="badge bg-primary">Both</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                        <i class="text-warning">✓</i>
+                                        {% else %}
+                                        <i class="text-muted">✗</i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ user.created_at.strftime('%b %d, %Y') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if user.last_login %}
+                                        <small class="text-muted">
+                                            {{ user.last_login.strftime('%b %d, %Y') }}
+                                        </small>
+                                        {% else %}
+                                        <small class="text-muted">Never</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No users found.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

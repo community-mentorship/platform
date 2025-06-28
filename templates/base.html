@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mentorship Platform{% endblock %}</title>
+    
+    <!-- Bootstrap CSS with Replit dark theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i data-feather="users" class="me-2"></i>
+                Mentorship Platform
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.logged_in %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i data-feather="home" class="me-1"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        
+                        {% if available_pages %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i data-feather="file-text" class="me-1"></i>
+                                    Resources
+                                </a>
+                                <ul class="dropdown-menu">
+                                    {% for page in available_pages %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('view_page', slug=page.slug) }}">
+                                                <i data-feather="{% if page.viewer_scope.value == 'all' %}users{% elif page.viewer_scope.value == 'admin' %}shield{% elif page.viewer_scope.value == 'mentor' %}user-plus{% else %}user{% endif %}" width="16" height="16" class="me-2"></i>
+                                                {{ page.title }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Mentor/Mentee Navigation -->
+                        {% if current_user.role in ['mentor', 'both'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('my_mentees') }}">
+                                    <i data-feather="user-plus" class="me-1"></i>
+                                    My Mentees
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if current_user.role in ['mentee', 'both'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('my_mentor') }}">
+                                    <i data-feather="user-check" class="me-1"></i>
+                                    My Mentor
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if current_user.is_admin %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i data-feather="settings" class="me-1"></i>
+                                    Backstage
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                        <i data-feather="bar-chart-2" class="me-2"></i>
+                                        Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_pages') }}">
+                                        <i data-feather="file-text" class="me-2"></i>
+                                        Manage Pages
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i data-feather="users" class="me-2"></i>
+                                        Manage Users
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_forms') }}">
+                                        <i data-feather="clipboard" class="me-2"></i>
+                                        Forms
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_new_page') }}">
+                                        <i data-feather="plus" class="me-2"></i>
+                                        New Page
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_new_form') }}">
+                                        <i data-feather="plus" class="me-2"></i>
+                                        New Form
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.logged_in %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i data-feather="user" class="me-1"></i>
+                                {{ current_user.first_name }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><h6 class="dropdown-header">Signed in as {{ current_user.username }}</h6></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                        <i data-feather="log-out" class="me-2"></i>
+                                        Sign Out
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i data-feather="log-in" class="me-1"></i>
+                                Sign In
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {% if category == 'success' %}
+                            <i data-feather="check-circle" class="me-2"></i>
+                        {% elif category == 'error' %}
+                            <i data-feather="alert-circle" class="me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i data-feather="alert-triangle" class="me-2"></i>
+                        {% else %}
+                            <i data-feather="info" class="me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="{% block main_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-center py-4 mt-5">
+        <div class="container">
+            <p class="text-muted mb-0">
+                <small>&copy; 2024 Mentorship Platform. Built for Lenny's Community.</small>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Initialize Feather Icons -->
+    <script>
+        feather.replace();
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

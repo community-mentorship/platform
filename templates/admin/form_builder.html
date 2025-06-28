@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if form_obj %}Edit Form{% else %}Create Form{% endif %} - Backstage
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Form Editor (Left Side) -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        {% if form_obj %}Edit Form{% else %}Create New Form{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="form-builder">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control", id="form-title") }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.slug.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">/form/</span>
+                                {{ form.slug(class="form-control", id="form-slug") }}
+                            </div>
+                            {% if form.slug.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.slug.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.viewer_scope.label(class="form-label") }}
+                            {{ form.viewer_scope(class="form-select") }}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                {{ form.is_active.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h6 class="mb-3">Form Fields</h6>
+                        <div id="form-fields">
+                            <!-- Fields will be populated by JavaScript -->
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addField()">
+                                <i class="fas fa-plus"></i> Add Field
+                            </button>
+                        </div>
+
+                        {{ form.fields_json(id="fields-json") }}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_forms') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Forms
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if form_obj %}Update Form{% else %}Create Form{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Preview (Right Side) -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Live Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div id="form-preview">
+                        <div class="text-muted text-center py-5">
+                            <i class="fas fa-eye fa-2x mb-3"></i>
+                            <p>Add fields to see live preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let fieldCounter = 0;
+let formFields = {% if form_obj and form_obj.fields %}{{ form_obj.fields | tojson }}{% else %}[]{% endif %};
+
+// Field types configuration
+const fieldTypes = {
+    'text': { label: 'Short Text', icon: 'fas fa-font' },
+    'textarea': { label: 'Long Text', icon: 'fas fa-align-left' },
+    'email': { label: 'Email', icon: 'fas fa-envelope' },
+    'url': { label: 'Website URL', icon: 'fas fa-link' },
+    'select': { label: 'Dropdown', icon: 'fas fa-list' },
+    'checkbox': { label: 'Checkboxes', icon: 'fas fa-check-square' },
+    'radio': { label: 'Multiple Choice', icon: 'fas fa-dot-circle' }
+};
+
+function initializeForm() {
+    renderFields();
+    updatePreview();
+    
+    // Auto-generate slug from title
+    document.getElementById('form-title').addEventListener('input', function() {
+        const title = this.value;
+        const slug = title.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim('-');
+        document.getElementById('form-slug').value = slug;
+    });
+}
+
+function addField() {
+    const newField = {
+        id: 'field_' + (++fieldCounter),
+        type: 'text',
+        label: 'New Field',
+        name: 'field_' + fieldCounter,
+        required: false,
+        placeholder: '',
+        options: [],
+        validation: {},
+        max_selections: 1
+    };
+    
+    formFields.push(newField);
+    renderFields();
+    updatePreview();
+}
+
+function removeField(index) {
+    formFields.splice(index, 1);
+    renderFields();
+    updatePreview();
+}
+
+function moveField(index, direction) {
+    if (direction === 'up' && index > 0) {
+        [formFields[index], formFields[index-1]] = [formFields[index-1], formFields[index]];
+    } else if (direction === 'down' && index < formFields.length - 1) {
+        [formFields[index], formFields[index+1]] = [formFields[index+1], formFields[index]];
+    }
+    renderFields();
+    updatePreview();
+}
+
+function updateField(index, property, value) {
+    formFields[index][property] = value;
+    
+    // Auto-generate field name from label
+    if (property === 'label') {
+        const name = value.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '_');
+        formFields[index]['name'] = name;
+        document.querySelector(`[data-field="${index}"] [name="field-name"]`).value = name;
+    }
+    
+    // Add default options when changing to option-based field types
+    if (property === 'type') {
+        if ((value === 'select' || value === 'radio' || value === 'checkbox') && (!formFields[index].options || formFields[index].options.length === 0)) {
+            formFields[index].options = ['Option 1', 'Option 2', 'Option 3'];
+        }
+        // Re-render to show/hide options field
+        renderFields();
+    }
+    
+    updatePreview();
+}
+
+function renderFields() {
+    const container = document.getElementById('form-fields');
+    container.innerHTML = '';
+    
+    formFields.forEach((field, index) => {
+        const fieldHtml = `
+            <div class="card mb-3" data-field="${index}">
+                <div class="card-header py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Field ${index + 1}</small>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary" onclick="moveField(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>
+                                <i class="fas fa-chevron-up"></i> Up
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="moveField(${index}, 'down')" ${index === formFields.length - 1 ? 'disabled' : ''}>
+                                <i class="fas fa-chevron-down"></i> Down
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="removeField(${index})">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label small">Field Type</label>
+                            <select class="form-select form-select-sm" onchange="updateField(${index}, 'type', this.value)">
+                                ${Object.entries(fieldTypes).map(([key, config]) => 
+                                    `<option value="${key}" ${field.type === key ? 'selected' : ''}>${config.label}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Field Name</label>
+                            <input type="text" class="form-control form-control-sm" name="field-name" value="${field.name}" 
+                                   onchange="updateField(${index}, 'name', this.value)">
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label small">Label</label>
+                        <textarea class="form-control form-control-sm" rows="2" 
+                                  onchange="updateField(${index}, 'label', this.value)"
+                                  placeholder="Supports **bold**, *italic*, and [links](url)">${field.label}</textarea>
+                        <small class="text-muted">Supports basic formatting: **bold**, *italic*, [link text](url)</small>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label small">Placeholder</label>
+                        <input type="text" class="form-control form-control-sm" value="${field.placeholder || ''}" 
+                               onchange="updateField(${index}, 'placeholder', this.value)">
+                    </div>
+                    ${field.type === 'select' || field.type === 'checkbox' || field.type === 'radio' ? `
+                    <div class="mt-2">
+                        <label class="form-label small">Options (one per line)</label>
+                        <textarea class="form-control form-control-sm" rows="3" 
+                                  onchange="updateField(${index}, 'options', this.value.split('\\n').filter(o => o.trim()))">${(field.options || []).join('\n')}</textarea>
+                    </div>
+                    ` : ''}
+                    ${field.type === 'checkbox' ? `
+                    <div class="mt-2">
+                        <label class="form-label small">Max Selections</label>
+                        <input type="number" class="form-control form-control-sm" value="${field.max_selections || 1}" min="1"
+                               onchange="updateField(${index}, 'max_selections', parseInt(this.value))">
+                    </div>
+                    ` : ''}
+                    ${field.type === 'text' || field.type === 'textarea' ? `
+                    <div class="mt-2">
+                        <label class="form-label small">Character Limits</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm" placeholder="Min length" 
+                                       value="${field.min_length || ''}" min="0"
+                                       onchange="updateField(${index}, 'min_length', parseInt(this.value) || null)">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm" placeholder="Max length" 
+                                       value="${field.max_length || ''}" min="1"
+                                       onchange="updateField(${index}, 'max_length', parseInt(this.value) || null)">
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    <div class="mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" ${field.required ? 'checked' : ''} 
+                                   onchange="updateField(${index}, 'required', this.checked)">
+                            <label class="form-check-label small">Required</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += fieldHtml;
+    });
+    
+    // Update hidden field with JSON data
+    document.getElementById('fields-json').value = JSON.stringify(formFields);
+}
+
+// Simple markdown-like formatting parser
+function formatLabel(text) {
+    if (!text) return '';
+    
+    return text
+        // Bold: **text** -> <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic: *text* -> <em>text</em>
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Links: [text](url) -> <a href="url">text</a>
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        // Line breaks
+        .replace(/\n/g, '<br>');
+}
+
+function updatePreview() {
+    const preview = document.getElementById('form-preview');
+    const formTitle = document.getElementById('form-title').value || 'Untitled Form';
+    
+    if (formFields.length === 0) {
+        preview.innerHTML = `
+            <div class="text-muted text-center py-5">
+                <i class="fas fa-eye fa-2x mb-3"></i>
+                <p>Add fields to see live preview</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">${formTitle}</h4>
+            </div>
+            <div class="card-body">
+                <form>
+    `;
+    
+    formFields.forEach(field => {
+        html += `<div class="mb-3">`;
+        html += `<label class="form-label">${formatLabel(field.label)}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
+        
+        switch (field.type) {
+            case 'text':
+                html += `<input type="text" class="form-control" placeholder="${field.placeholder || ''}" disabled>`;
+                if (field.min_length || field.max_length) {
+                    html += `<small class="text-muted">`;
+                    if (field.min_length && field.max_length) {
+                        html += `${field.min_length}-${field.max_length} characters`;
+                    } else if (field.min_length) {
+                        html += `Minimum ${field.min_length} characters`;
+                    } else if (field.max_length) {
+                        html += `Maximum ${field.max_length} characters`;
+                    }
+                    html += `</small>`;
+                }
+                break;
+            case 'textarea':
+                html += `<textarea class="form-control" rows="3" placeholder="${field.placeholder || ''}" disabled></textarea>`;
+                if (field.min_length || field.max_length) {
+                    html += `<small class="text-muted">`;
+                    if (field.min_length && field.max_length) {
+                        html += `${field.min_length}-${field.max_length} characters`;
+                    } else if (field.min_length) {
+                        html += `Minimum ${field.min_length} characters`;
+                    } else if (field.max_length) {
+                        html += `Maximum ${field.max_length} characters`;
+                    }
+                    html += `</small>`;
+                }
+                break;
+            case 'email':
+                html += `<input type="email" class="form-control" placeholder="${field.placeholder || 'Enter your email'}" disabled>`;
+                break;
+            case 'url':
+                html += `<input type="url" class="form-control" placeholder="${field.placeholder || 'https://example.com'}" disabled>`;
+                break;
+            case 'select':
+                html += `<select class="form-select" disabled>`;
+                html += `<option>Choose...</option>`;
+                (field.options || []).forEach(option => {
+                    html += `<option>${option}</option>`;
+                });
+                html += `</select>`;
+                break;
+            case 'radio':
+                (field.options || []).forEach((option, i) => {
+                    html += `
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="${field.name}" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                break;
+            case 'checkbox':
+                (field.options || []).forEach((option, i) => {
+                    html += `
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                if (field.max_selections > 1) {
+                    html += `<small class="text-muted">Select up to ${field.max_selections} options</small>`;
+                }
+                break;
+        }
+        html += `</div>`;
+    });
+    
+    html += `
+                    <button type="button" class="btn btn-primary" disabled>Submit</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    preview.innerHTML = html;
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', initializeForm);
+</script>
+{% endblock %}

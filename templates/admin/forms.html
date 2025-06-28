@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Forms - Backstage{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Forms</h2>
+        <a href="{{ url_for('admin_new_form') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Form
+        </a>
+    </div>
+
+    {% if forms %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Slug</th>
+                            <th>Access</th>
+                            <th>Status</th>
+                            <th>Submissions</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in forms %}
+                        <tr>
+                            <td>
+                                <strong>{{ form.title }}</strong>
+                            </td>
+                            <td>
+                                <code>/form/{{ form.slug }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ form.viewer_scope.value.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if form.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ form.submissions.count() }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ form.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if form.is_active %}
+                                    <button type="button" class="btn btn-outline-primary" 
+                                            onclick="showFormPreview({{ form.id }})" 
+                                            data-bs-toggle="modal" data-bs-target="#previewModal">
+                                        <i class="fas fa-eye"></i> Preview
+                                    </button>
+                                    <a href="{{ url_for('form_view', slug=form.slug) }}" 
+                                       class="btn btn-outline-info btn-sm" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i> Live Form
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('admin_edit_form', form_id=form.id) }}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    {% if form.submissions.count() == 0 %}
+                                    <form method="POST" action="{{ url_for('admin_delete_form', form_id=form.id) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Are you sure you want to delete this form?')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+            <h4>No Forms</h4>
+            <p class="text-muted">Create your first form to start collecting user responses.</p>
+            <a href="{{ url_for('admin_new_form') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Form
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Form Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store forms data for preview
+const formsData = [
+    {% for form in forms %}
+    {
+        id: {{ form.id }},
+        title: {{ form.title | tojson }},
+        slug: {{ form.slug | tojson }},
+        fields: {{ form.fields | tojson }},
+        viewer_scope: {{ form.viewer_scope.value | tojson }},
+        is_active: {{ form.is_active | tojson }},
+        created_at: {{ form.created_at.isoformat() | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+function showFormPreview(formId) {
+    const form = formsData.find(f => f.id === formId);
+    if (!form) return;
+    
+    let html = `
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">${form.title}</h4>
+            </div>
+            <div class="card-body">
+                <form>
+    `;
+    
+    form.fields.forEach(field => {
+        html += `
+            <div class="mb-3">
+                <label class="form-label">
+                    ${field.label}
+                    ${field.required ? '<span class="text-danger">*</span>' : ''}
+                </label>
+        `;
+        
+        switch (field.type) {
+            case 'text':
+                html += `<input type="text" class="form-control" placeholder="${field.placeholder || ''}" disabled>`;
+                break;
+            case 'textarea':
+                html += `<textarea class="form-control" rows="4" placeholder="${field.placeholder || ''}" disabled></textarea>`;
+                break;
+            case 'email':
+                html += `<input type="email" class="form-control" placeholder="${field.placeholder || 'Enter your email'}" disabled>`;
+                break;
+            case 'url':
+                html += `<input type="url" class="form-control" placeholder="${field.placeholder || 'https://example.com'}" disabled>`;
+                break;
+            case 'select':
+                html += `<select class="form-select" disabled>`;
+                html += `<option>Choose...</option>`;
+                (field.options || []).forEach(option => {
+                    html += `<option>${option}</option>`;
+                });
+                html += `</select>`;
+                break;
+            case 'radio':
+                (field.options || []).forEach(option => {
+                    html += `
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="${field.name}" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                break;
+            case 'checkbox':
+                (field.options || []).forEach(option => {
+                    html += `
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" disabled>
+                            <label class="form-check-label">${option}</label>
+                        </div>
+                    `;
+                });
+                if (field.max_selections && field.max_selections > 1) {
+                    html += `<small class="text-muted">Select up to ${field.max_selections} options</small>`;
+                }
+                break;
+        }
+        
+        html += `</div>`;
+    });
+    
+    html += `
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" disabled>
+                            Submit Form
+                        </button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <span class="text-danger">*</span> Required fields
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('previewContent').innerHTML = html;
+    document.getElementById('previewModalLabel').textContent = `Preview: ${form.title}`;
+}
+</script>
+{% endblock %}
